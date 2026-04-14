@@ -1,0 +1,21 @@
+-- Koi Pond Manager Database Schema
+
+CREATE DATABASE IF NOT EXISTS koipondmanager;
+USE koipondmanager;
+
+-- Ponds table
+CREATE TABLE IF NOT EXISTS ponds (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    name        VARCHAR(100)  NOT NULL,
+    location    VARCHAR(255),
+    volume      DOUBLE        NOT NULL,
+    volume_unit VARCHAR(10)   NOT NULL DEFAULT 'gallons',
+    length      DOUBLE,
+    width       DOUBLE,
+    depth       DOUBLE,
+    filtration_type   VARCHAR(100),
+    uv_bulb_count     INT DEFAULT 0,
+    uv_bulb_wattage   DOUBLE DEFAULT 0,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
