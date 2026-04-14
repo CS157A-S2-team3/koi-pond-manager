@@ -4,7 +4,7 @@
 
 /* Use colors defined in original style.css */
 :root {
-    --koi-red: #cc0000; /* Re-declaring for clarity if not loaded */
+    --koi-blue: #4a90e2;
     --koi-white: #ffffff;
     --koi-gray: #f4f4f4;
 }
@@ -48,7 +48,7 @@ body {
 }
 
 .inventory-header h2 {
-    color: var(--koi-red);
+    color: var(--koi-dark-blue);
     margin: 0;
 }
 
@@ -91,7 +91,7 @@ body {
 
 .koi-info h3 {
     margin: 0 0 10px 0;
-    color: var(--koi-red);
+    color: var(--koi-dark-blue);
 }
 
 .koi-info p {
@@ -138,11 +138,11 @@ body {
 
 /* The Styled Red Box */
 .red-form-box {
-    background-color: var(--koi-red);
+    background-color: var(--koi-blue);
     color: white;
     padding: 40px;
     border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 25px rgba(74, 144, 226, 0.2);
     width: 100%;
     max-width: 600px;
 }
@@ -162,7 +162,7 @@ body {
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
-    color: #ffcccc; /* Light red/pink for readability on dark red */
+    color: #e3f2fd;
 }
 
 .koi-form input[type="text"],
@@ -171,7 +171,7 @@ body {
 .koi-form select {
     width: 100%;
     padding: 10px;
-    border: 1px solid #ff9999;
+    border: 1px solid #4a90e2;
     border-radius: 4px;
     box-sizing: border-box; /* Crucial for padding */
     background-color: rgba(255,255,255,0.9);
@@ -196,7 +196,7 @@ body {
 /* Ensure the submit button looks good inside the red box */
 .koi-form button[type="submit"] {
     background-color: white;
-    color: var(--koi-red);
+    color: var(--koi-blue);
     border: 2px solid white;
     padding: 10px 20px;
     border-radius: 4px;
@@ -205,7 +205,7 @@ body {
 }
 
 .koi-form button[type="submit"]:hover {
-    background-color: var(--koi-red);
+    background-color: var(--koi-dark-blue);
     color: white;
 }
 

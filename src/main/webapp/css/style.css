@@ -1,9 +1,9 @@
 /* Color Palette: Koi Red Theme */
 :root {
-    --koi-red: #d32f2f;
-    --koi-light-red: #ffcdd2;
-    --koi-dark-red: #b71c1c;
-    --bg-light: #f9f9f9;
+    --koi-blue: #4a90e2;
+    --koi-light-blue: #e3f2fd;
+    --koi-dark-blue: #1976d2;
+    --bg-light: #f4f7f9;
     --text-dark: #333;
     --white: #ffffff;
 }
@@ -22,7 +22,7 @@ body {
     top: 0;
     width: 100%;
     box-sizing: border-box;
-    background-color: var(--koi-red);
+    background-color: var(--koi-blue);
     color: var(--white);
     padding: 1rem 2rem;
     display: flex;
@@ -65,7 +65,7 @@ body {
 .search-container button {
     background: none;
     border: none;
-    color: var(--koi-red);
+    color: var(--koi-blue);
     cursor: pointer;
 }
 
@@ -80,6 +80,8 @@ body {
 
 .nav-links a:hover {
     text-decoration: underline;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
 }
 
 .nav-right {
@@ -128,7 +130,7 @@ body {
 }
 
 .dropdown-content a:hover {
-    background-color: var(--koi-light-red);
+    background-color: var(--koi-light-blue);
 }
 
 .profile-dropdown:hover .dropdown-content {
@@ -149,7 +151,7 @@ body {
 }
 
 .welcome-section h1 {
-    color: var(--koi-dark-red);
+    color: var(--koi-dark-blue);
     font-size: 3rem; /* Bigger font size as requested */
 }
 
@@ -174,7 +176,7 @@ table {
 }
 
 thead {
-    background-color: var(--koi-light-red);
+    background-color: var(--koi-light-blue);
     position: sticky;
     top: 0;
 }
@@ -197,7 +199,7 @@ th, td {
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     z-index: 10;
     position: relative;
-    background-color: #fffafa; /* Subtle highlight */
+    background-color: #e3f2fd; /* Subtle highlight */
 }
 
 .section-header {
@@ -208,9 +210,9 @@ th, td {
 }
 
 .add-task-btn {
-    background-color: var(--koi-dark-red);
+    background-color: var(--koi-blue);
+    border: 1px solid var(--white);
     color: white;
-    border: 2px solid var(--white);
     padding: 10px 20px;
     border-radius: 25px;
     cursor: pointer;
@@ -219,7 +221,7 @@ th, td {
 }
 
 .add-task-btn:hover {
-    background-color: #ff4d4d; /* Brighter red on hover */
+    background-color: var(--koi-dark-blue);
     transform: scale(1.05);
 }
 
@@ -229,14 +231,14 @@ th, td {
     bottom: 0;
     left: 0;
     width: 100%;
-    background-color: var(--koi-dark-red);
+    background-color: #1a2b3c;
+    border-top: 3px solid #1976d2;;
     color: var(--white);
     display: flex;
     justify-content: space-between;
     padding: 15px 40px;
     box-sizing: border-box;
     font-size: 0.85rem;
-    border-top: 3px solid var(--koi-red);
 }
 
 .footer-left, .footer-right {
@@ -250,16 +252,16 @@ th, td {
 }
 
 .urgent {
-    background-color: #fff5f5;
+    background-color: #eef2f7;
 }
 
 .status-flag {
-    color: var(--koi-red);
+    color: #d32f2f;
     font-weight: bold;
 }
 
 .action-btn {
-    background-color: var(--koi-red);
+    background-color: var(--koi-blue);
     color: white;
     border: none;
     padding: 8px 15px;
@@ -268,5 +270,5 @@ th, td {
 }
 
 .action-btn:hover {
-    background-color: var(--koi-dark-red);
+    background-color: var(--koi-dark-blue);
 }
