@@ -212,17 +212,21 @@ th, td {
 .add-task-btn {
     background-color: var(--koi-blue);
     border: 1px solid var(--white);
-    color: white;
+    color: white !important;
     padding: 10px 20px;
     border-radius: 25px;
     cursor: pointer;
     font-weight: bold;
-    transition: background 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.3s ease, transform 0.3s ease;
 }
 
 .add-task-btn:hover {
     background-color: var(--koi-dark-blue);
     transform: scale(1.05);
+    text-decoration: none;
 }
 
 /* Fixed Footer Bar */

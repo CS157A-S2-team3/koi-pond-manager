@@ -1,0 +1,152 @@
+.white-form-box {
+    background-color: #ffffff;
+    color: #333333;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    border: 1px solid #ddd;
+}
+
+.white-form-box h2 {
+    color: var(--koi-dark-blue);
+    margin-top: 0;
+    text-align: center;
+    border-bottom: 2px solid var(--koi-light-blue);
+    padding-bottom: 10px;
+}
+
+.section-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 40px;
+    margin-bottom: 20px;
+}
+
+.maintenance-box {
+    background: var(--white);
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+}
+
+.maintenance-form input[type="text"],
+.maintenance-form input[type="date"],
+.maintenance-form select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #000000;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 1rem;
+}
+
+.maintenance-form label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+    color: #444;
+}
+
+.subtitle {
+    color: #666;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
+
+/* Status Colors (Teammate's Blue Palette) */
+.status-flag.overdue {
+    color: #d32f2f; /* Keep red for urgent warning */
+    font-weight: bold;
+}
+
+.status-flag.pending {
+    color: var(--koi-blue);
+    font-weight: bold;
+}
+
+/* Maintenance Info Grid */
+.maintenance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.info-card {
+    background: var(--koi-light-blue);
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid var(--koi-blue);
+}
+
+.info-card i {
+    font-size: 2rem;
+    color: var(--koi-dark-blue);
+    margin-bottom: 10px;
+}
+
+/* Modal Styling */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    padding-top: 100px;
+}
+
+.modal-content {
+    margin: auto;
+    width: 90%;
+    max-width: 500px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.save-btn {
+    background-color: var(--koi-blue);
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.cancel-btn {
+    background-color: #666;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.close-btn {
+    float: right;
+    font-size: 24px;
+    font-weight: bold;
+    color: #000;
+    cursor: pointer;
+}
+
+.close {
+    color: white;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover { color: #ccc; }

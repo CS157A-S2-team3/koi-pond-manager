@@ -57,7 +57,9 @@
         <section class="task-section">
             <div class="section-header">
                 <h2>Priority Tasks</h2>
-                <button class="add-task-btn"><i class="fa fa-plus"></i> Add Task</button>
+                <a href="maintenance.jsp" class="add-task-btn" style="text-decoration: none;">
+            		<i class="fa fa-plus"></i> Maintenance
+        		</a>
             </div>
             
             <div class="table-container">
