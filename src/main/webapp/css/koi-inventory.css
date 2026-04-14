@@ -1,0 +1,220 @@
+/* =========================================
+   Global & Container Fixes
+   ========================================= */
+
+/* Use colors defined in original style.css */
+:root {
+    --koi-red: #cc0000; /* Re-declaring for clarity if not loaded */
+    --koi-white: #ffffff;
+    --koi-gray: #f4f4f4;
+}
+
+body {
+    background-color: var(--koi-gray);
+    margin: 0;
+    padding: 0;
+}
+
+/* IMPORTANT FIX: Clears the fixed navigation bar */
+.content-wrapper {
+    padding-top: 160px; 
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+/* Centers the main container */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* =========================================
+   koi.jsp (Inventory) Specific Styles
+   ========================================= */
+
+/* Layout for the Header: Title left, Button right */
+.inventory-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    width: 100%;
+    max-width: 800px; /* Match the width of your koi-grid-centered */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.inventory-header h2 {
+    color: var(--koi-red);
+    margin: 0;
+}
+
+/* The button inherits style from .add-task-btn in style.css */
+
+/* Grid to center the profiles in the middle of the screen */
+.koi-grid-centered {
+    display: grid;
+    /* Forces single column grid and centers the column */
+    grid-template-columns: minmax(300px, 800px); 
+    justify-content: center; /* Aligns grid in center of screen */
+    gap: 20px;
+    width: 100%;
+}
+
+/* New Horizontal Card Layout */
+.koi-card-horizontal {
+    display: flex; /* Flex row for Details (left) Image (right) */
+    background: var(--koi-white);
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: transform 0.2s;
+}
+
+.koi-card-horizontal:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* LEFT SIDE: Details */
+.koi-details-left {
+    flex: 2; /* Takes more space */
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.koi-info h3 {
+    margin: 0 0 10px 0;
+    color: var(--koi-red);
+}
+
+.koi-info p {
+    margin: 5px 0;
+    color: #555;
+    font-size: 0.95rem;
+}
+
+.koi-card-actions {
+    margin-top: 15px;
+}
+
+/* The button inherits style from .action-btn in style.css */
+
+/* RIGHT SIDE: Image */
+.koi-image-right {
+    flex: 1; /* Takes less space */
+    background-color: #eee;
+    border-left: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.koi-image-right img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Crop to fit container */
+}
+
+
+/* =========================================
+   koiProfile.jsp Specific Styles
+   ========================================= */
+
+/* Centers the form box on the screen */
+.profile-centered-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Changed to start so it doesn't float too low */
+    padding-top: 20px;
+}
+
+/* The Styled Red Box */
+.red-form-box {
+    background-color: var(--koi-red);
+    color: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    width: 100%;
+    max-width: 600px;
+}
+
+.red-form-box h2 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 30px;
+    color: white;
+}
+
+.koi-form .form-group {
+    margin-bottom: 15px;
+}
+
+.koi-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #ffcccc; /* Light red/pink for readability on dark red */
+}
+
+.koi-form input[type="text"],
+.koi-form input[type="number"],
+.koi-form input[type="file"],
+.koi-form select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ff9999;
+    border-radius: 4px;
+    box-sizing: border-box; /* Crucial for padding */
+    background-color: rgba(255,255,255,0.9);
+}
+
+.koi-form .form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.koi-form .form-row .form-group {
+    flex: 1;
+}
+
+.koi-form .form-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+/* Ensure the submit button looks good inside the red box */
+.koi-form button[type="submit"] {
+    background-color: white;
+    color: var(--koi-red);
+    border: 2px solid white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.koi-form button[type="submit"]:hover {
+    background-color: var(--koi-red);
+    color: white;
+}
+
+.red-form-box .cancel-link {
+    color: white;
+    text-decoration: none;
+    padding: 10px 0;
+}
+
+.red-form-box .cancel-link:hover {
+    text-decoration: underline;
+}
