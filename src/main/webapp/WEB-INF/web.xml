@@ -11,4 +11,14 @@
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
 
+    <servlet>
+        <servlet-name>TestDbServlet</servlet-name>
+        <servlet-class>com.koi.TestDbServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>TestDbServlet</servlet-name>
+        <url-pattern>/testdb</url-pattern>
+    </servlet-mapping>
+
 </web-app>
