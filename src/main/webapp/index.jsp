@@ -1,4 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.sql.*" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +9,29 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+
+<%
+    java.sql.Connection con = null;
+    int totalPonds = 0;
+
+    try {
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        con = DriverManager.getConnection(
+            "jdbc:mysql://localhost:3306/koipondmanager?useSSL=false&serverTimezone=UTC",
+            "root", "kiqsi6-woznaq-Syzpan");
+
+        // Get total pond count
+        Statement countStmt = con.createStatement();
+        ResultSet countRs = countStmt.executeQuery("SELECT COUNT(*) AS total FROM ponds");
+        if (countRs.next()) {
+            totalPonds = countRs.getInt("total");
+        }
+        countRs.close();
+        countStmt.close();
+    } catch (Exception e) {
+        // Connection failed 
+    }
+%>
 
     <header>
         <h1>Koi Pond Manager</h1>
@@ -25,23 +49,23 @@
         <div class="summary-cards">
             <div class="card">
                 <div class="card-label">Total Ponds</div>
-                <div class="card-value">6</div>
-                <div class="card-sub">2 need attention</div>
+                <div class="card-value"><%= totalPonds %></div>
+                <div class="card-sub"><a href="ponds.jsp">Manage ponds</a></div>
             </div>
             <div class="card">
                 <div class="card-label">Koi Inventory</div>
-                <div class="card-value">134</div>
-                <div class="card-sub">12 added this month</div>
+                <div class="card-value">0</div>
+                <div class="card-sub">Coming soon</div>
             </div>
             <div class="card">
                 <div class="card-label">Water Quality</div>
-                <div class="card-value">82%</div>
-                <div class="card-sub">Avg. across all ponds</div>
+                <div class="card-value">—</div>
+                <div class="card-sub">Coming soon</div>
             </div>
             <div class="card">
                 <div class="card-label">Open Tasks</div>
-                <div class="card-value">5</div>
-                <div class="card-sub">1 overdue</div>
+                <div class="card-value">0</div>
+                <div class="card-sub">Coming soon</div>
             </div>
         </div>
 
@@ -52,123 +76,67 @@
                 <thead>
                     <tr>
                         <th>Pond Name</th>
-                        <th>Capacity</th>
-                        <th>Koi Count</th>
-                        <th>Water Quality</th>
-                        <th>Status</th>
+                        <th>Location</th>
+                        <th>Volume</th>
+                        <th>Filtration</th>
+                        <th>UV Bulbs</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <%-- Replace with dynamic data from database --%>
+                <%
+                    try {
+                        if (con != null && !con.isClosed()) {
+                            Statement stmt = con.createStatement();
+                            ResultSet rs = stmt.executeQuery("SELECT * FROM ponds ORDER BY name");
+
+                            boolean hasRows = false;
+                            while (rs.next()) {
+                                hasRows = true;
+                %>
                     <tr>
-                        <td>Kohaku</td>
-                        <td>5,000 gal</td>
-                        <td>28</td>
-                        <td>94%</td>
-                        <td><span class="badge badge-good">Good</span></td>
+                        <td><%= rs.getString("name") %></td>
+                        <td><%= rs.getString("location") != null ? rs.getString("location") : "—" %></td>
+                        <td><%= String.format("%,.0f", rs.getDouble("volume")) %> <%= rs.getString("volume_unit") %></td>
+                        <td><%= rs.getString("filtration_type") != null ? rs.getString("filtration_type") : "—" %></td>
+                        <td><%= rs.getInt("uv_bulb_count") %> @ <%= rs.getDouble("uv_bulb_wattage") %>W</td>
                     </tr>
+                <%
+                            }
+                            rs.close();
+                            stmt.close();
+
+                            if (!hasRows) {
+                %>
                     <tr>
-                        <td>Sakura</td>
-                        <td>3,200 gal</td>
-                        <td>19</td>
-                        <td>76%</td>
-                        <td><span class="badge badge-warn">Fair</span></td>
+                        <td colspan="5" style="text-align:center; color:#6c757d; padding:2rem;">
+                            No ponds yet. <a href="ponds.jsp">Add your first pond</a>
+                        </td>
                     </tr>
+                <%
+                            }
+                        }
+                    } catch (Exception e) {
+                %>
                     <tr>
-                        <td>Taisho</td>
-                        <td>4,500 gal</td>
-                        <td>34</td>
-                        <td>45%</td>
-                        <td><span class="badge badge-danger">Poor</span></td>
+                        <td colspan="5" style="color:#dc3545;">Error loading ponds: <%= e.getMessage() %></td>
                     </tr>
-                    <tr>
-                        <td>Showa</td>
-                        <td>6,000 gal</td>
-                        <td>22</td>
-                        <td>88%</td>
-                        <td><span class="badge badge-good">Good</span></td>
-                    </tr>
+                <%
+                    }
+                %>
                 </tbody>
             </table>
-        </div>
-
-        <%-- Two column: Recent Activity + Water Quality --%>
-        <div class="two-col">
-            <div class="section">
-                <h2>Recent Activity</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Event</th>
-                            <th>Pond</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Apr 13</td>
-                            <td>Water test completed</td>
-                            <td>Kohaku</td>
-                        </tr>
-                        <tr>
-                            <td>Apr 12</td>
-                            <td>3 koi transferred</td>
-                            <td>Sakura</td>
-                        </tr>
-                        <tr>
-                            <td>Apr 11</td>
-                            <td>Filter cleaned</td>
-                            <td>Taisho</td>
-                        </tr>
-                        <tr>
-                            <td>Apr 10</td>
-                            <td>Salt treatment applied</td>
-                            <td>Showa</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="section">
-                <h2>Water Quality Stats</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Parameter</th>
-                            <th>Avg Value</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>pH Level</td>
-                            <td>7.4</td>
-                            <td><span class="badge badge-good">Normal</span></td>
-                        </tr>
-                        <tr>
-                            <td>Ammonia</td>
-                            <td>0.12 ppm</td>
-                            <td><span class="badge badge-good">Safe</span></td>
-                        </tr>
-                        <tr>
-                            <td>Nitrite</td>
-                            <td>0.8 ppm</td>
-                            <td><span class="badge badge-warn">Elevated</span></td>
-                        </tr>
-                        <tr>
-                            <td>Temperature</td>
-                            <td>72&#176;F</td>
-                            <td><span class="badge badge-good">Optimal</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
         </div>
     </main>
 
     <footer>
         <p>&copy; 2026 Koi Pond Manager &mdash; CS157A Team 3</p>
     </footer>
+
+<%
+    if (con != null) {
+        try { con.close(); } catch (SQLException e) { /* ignore */ }
+    }
+%>
 
 </body>
 </html>
