@@ -10,34 +10,16 @@
 </head>
 <body>
     
-    <nav class="navbar">
-        <div class="nav-left">
-            <a href="index.jsp" class="logo" style="text-decoration: none; color: white;">LOGO HERE???</a>
-        </div>
-        <div class="nav-middle">
-            <div class="search-container">
-                <input type="text" placeholder="Search tasks, ponds, or koi...">
-                <button type="submit"><i class="fa fa-search"></i></button>
-            </div>
-            <div class="nav-links">
-                <a href="koi.jsp" class="active">Koi</a>
-                <a href="ponds.jsp">Ponds</a>
-                <a href="treatments.jsp">Treatments</a>
-                <a href="logs.jsp">Logs</a>
-            </div>
-        </div>
-        <div class="nav-right">
-            <div class="icon-btn" title="View Alerts"><i class="fa fa-bell"></i><span class="badge">3</span></div>
-            <div class="icon-btn profile-dropdown">
-                <i class="fa fa-user-circle"></i>
-                <div class="dropdown-content">
-                    <a href="profile.jsp">Update Profile</a>
-                    <hr>
-                    <a href="logout.jsp" class="logout">Logout</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <header>
+        <h1>Koi Pond Manager</h1>
+        <nav>
+            <a href="index.jsp">Dashboard</a>
+            <a href="ponds.jsp">Ponds</a>
+            <a href="koi.jsp">Koi</a>
+            <a href="treatments.jsp">Treatments</a>
+            <a href="logs.jsp">Logs</a>
+        </nav>
+    </header>
 
     <main class="content-wrapper">
     	<div class="container">
@@ -68,6 +50,10 @@
         	</div>
     	</div>
 	</main>
+	
+	<footer>
+        <p>&copy; 2026 Koi Pond Manager &mdash; CS157A Team 3</p>
+    </footer>
 
 </body>
 </html>

@@ -1,114 +1,151 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.sql.*" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Koi Pond Manager - Dashboard</title>
+    <title>Koi Pond Manager</title>
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
-    <%-- 
-        JAVA CODE PLACE HERE...
-    --%>
+<%
+    java.sql.Connection con = null;
+    int totalPonds = 0;
+    int totalTasks = 0;
 
-    <nav class="navbar">
-        <div class="nav-left">
-            <div class="logo">LOGO HERE???</div>
+    try {
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        con = DriverManager.getConnection(
+            "jdbc:mysql://localhost:3306/koipondmanager?useSSL=false&serverTimezone=UTC",
+            "root", "kiqsi6-woznaq-Syzpan");
+
+        // Get total pond count
+        Statement countStmt = con.createStatement();
+        ResultSet countRs = countStmt.executeQuery("SELECT COUNT(*) AS total FROM ponds");
+        if (countRs.next()) {
+            totalPonds = countRs.getInt("total");
+        }
+        countRs.close();
+        
+        // Get total task count
+        ResultSet taskRs = countStmt.executeQuery("SELECT COUNT(*) AS total FROM MaintenanceTask WHERE status != 'Completed'");
+        if (taskRs.next()) {
+            totalTasks = taskRs.getInt("total");
+        }
+        taskRs.close();
+        
+        countStmt.close();
+    } catch (Exception e) {
+        // Connection failed 
+    }
+%>
+
+    <header>
+        <h1>Koi Pond Manager</h1>
+        <nav>
+            <a href="index.jsp">Dashboard</a>
+            <a href="ponds.jsp">Ponds</a>
+            <a href="koi.jsp">Koi</a>
+            <a href="treatments.jsp">Treatments</a>
+            <a href="logs.jsp">Logs</a>
+        </nav>
+    </header>
+
+    <main>
+        <%-- Summary Cards --%>
+        <div class="summary-cards">
+            <div class="card">
+                <div class="card-label">Total Ponds</div>
+                <div class="card-value"><%= totalPonds %></div>
+                <div class="card-sub"><a href="ponds.jsp">Manage ponds</a></div>
+            </div>
+            <div class="card">
+                <div class="card-label">Koi Inventory</div>
+                <div class="card-value">0</div>
+                <div class="card-sub">Coming soon</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Water Quality</div>
+                <div class="card-value">—</div>
+                <div class="card-sub">Coming soon</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Open Tasks</div>
+                <div class="card-value"><%= totalTasks %></div>
+                <div class="card-sub"><a href="maintenance.jsp">Manage ponds</a></div>
+            </div>
         </div>
 
-        <div class="nav-middle">
-            <div class="search-container">
-                <input type="text" placeholder="Search tasks, ponds, or koi...">
-                <button type="submit"><i class="fa fa-search"></i></button>
-            </div>
-            <div class="nav-links">
-                <a href="koi.jsp">Koi</a>
-                <a href="ponds.jsp">Ponds</a>
-                <a href="treatments.jsp">Treatments</a>
-                <a href="logs.jsp">Logs</a>
-            </div>
+        <%-- Pond Overview --%>
+        <div class="section">
+            <h2>Pond Overview</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Pond Name</th>
+                        <th>Location</th>
+                        <th>Volume</th>
+                        <th>Filtration</th>
+                        <th>UV Bulbs</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <%
+                    try {
+                        if (con != null && !con.isClosed()) {
+                            Statement stmt = con.createStatement();
+                            ResultSet rs = stmt.executeQuery("SELECT * FROM ponds ORDER BY name");
+
+                            boolean hasRows = false;
+                            while (rs.next()) {
+                                hasRows = true;
+                %>
+                    <tr>
+                        <td><%= rs.getString("name") %></td>
+                        <td><%= rs.getString("location") != null ? rs.getString("location") : "—" %></td>
+                        <td><%= String.format("%,.0f", rs.getDouble("volume")) %> <%= rs.getString("volume_unit") %></td>
+                        <td><%= rs.getString("filtration_type") != null ? rs.getString("filtration_type") : "—" %></td>
+                        <td><%= rs.getInt("uv_bulb_count") %> @ <%= rs.getDouble("uv_bulb_wattage") %>W</td>
+                    </tr>
+                <%
+                            }
+                            rs.close();
+                            stmt.close();
+
+                            if (!hasRows) {
+                %>
+                    <tr>
+                        <td colspan="5" style="text-align:center; color:#6c757d; padding:2rem;">
+                            No ponds yet. <a href="ponds.jsp">Add your first pond</a>
+                        </td>
+                    </tr>
+                <%
+                            }
+                        }
+                    } catch (Exception e) {
+                %>
+                    <tr>
+                        <td colspan="5" style="color:#dc3545;">Error loading ponds: <%= e.getMessage() %></td>
+                    </tr>
+                <%
+                    }
+                %>
+                </tbody>
+            </table>
         </div>
-
-        <div class="nav-right">
-            <div class="icon-btn" title="View Alerts">
-                <i class="fa fa-bell"></i>
-                <span class="badge">3</span>
-            </div>
-            <div class="icon-btn profile-dropdown">
-                <i class="fa fa-user-circle"></i>
-                <div class="dropdown-content">
-                    <a href="profile.jsp">Update Profile</a>
-                    <hr>
-                    <a href="logout.jsp" class="logout">Logout</a>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <main class="content-wrapper">
-        <section class="welcome-section centered">
-            <h1>Welcome back, <span class="user-name">Yuujiiii</span>!</h1>
-            <p>Managing your organization's ponds and koi inventory.</p>
-        </section>
-
-        <section class="task-section">
-            <div class="section-header">
-                <h2>Priority Tasks</h2>
-                <a href="maintenance.jsp" class="add-task-btn" style="text-decoration: none;">
-            		<i class="fa fa-plus"></i> Maintenance
-        		</a>
-            </div>
-            
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Task Name</th>
-                            <th>Pond</th>
-                            <th>Deadline</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <%-- 
-                            JAVA LOOP PLACEHOLDER: 
-                            You will use a 'while' or 'for' loop here to iterate through 
-                            ResultSet rows from your MaintenanceTask table[cite: 285].
-                        --%>
-                        
-                        <tr class="task-row urgent">
-                            <td>UV Bulb Inspection</td>
-                            <td>Pond Kohaku</td>
-                            <td>2026-03-24</td>
-                            <td><span class="status-flag">Overdue</span></td>
-                        </tr>
-                        
-                        <tr class="task-row">
-                            <td>Water Quality Test</td>
-                            <td>Pond Sakura</td>
-                            <td>2026-03-25</td>
-                            <td>Pending</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
     </main>
 
-    <footer class="fixed-footer">
-        <div class="footer-left">
-            <h3>Koi Pond Manager</h3>
-            <p>Designed for dealers and hobbyists to prevent fish death and financial loss.</p>
-        </div>
-        <div class="footer-right">
-            <h3>Support & Contact</h3>
-            <p><strong>Organization:</strong> Blue Ridge Koi Farm</p>
-            <p>Contact: yuji.nishi@blueridgekoifarm.com</p>
-        </div>
+    <footer>
+        <p>&copy; 2026 Koi Pond Manager &mdash; CS157A Team 3</p>
     </footer>
+
+<%
+    if (con != null) {
+        try { con.close(); } catch (SQLException e) { /* ignore */ }
+    }
+%>
 
 </body>
 </html>
