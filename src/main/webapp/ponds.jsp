@@ -104,7 +104,7 @@
 
         <%-- Load and display all ponds --%>
         <%
-            <!-- check if there are ponds and don't show otherwise -->
+            // check if there are ponds and don't show otherwise
             boolean hasPonds = false;
             ResultSet rs = null;
             Statement stmt = null;
@@ -116,7 +116,7 @@
 
                     if (rs.isBeforeFirst()) {
                         hasPonds = true;
-        %>
+        --%>
         <div class="pond-grid">
             <%
                         while (rs.next()) {
