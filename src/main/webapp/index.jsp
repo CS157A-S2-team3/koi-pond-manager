@@ -71,7 +71,7 @@
             <div class="card">
                 <div class="card-label">Open Tasks</div>
                 <div class="card-value"><%= totalTasks %></div>
-                <div class="card-sub"><a href="maintenance.jsp">Manage ponds</a></div>
+                <div class="card-sub"><a href="maintenance.jsp">Manage tasks</a></div>
             </div>
         </div>
 

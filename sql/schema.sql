@@ -60,3 +60,27 @@ CREATE TABLE IF NOT EXISTS treatments (
     quarantine BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Table for recurring maintenance
+CREATE TABLE IF NOT EXISTS MaintenanceSchedule (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    notes TEXT,
+    status VARCHAR(20) DEFAULT 'Active',
+    freq VARCHAR(50) NOT NULL, -- Daily, Weekly, Monthly, etc.
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP NULL,
+    created_by_user_id INT
+);
+
+-- Table for generated maintenance tasks
+CREATE TABLE IF NOT EXISTS MaintenanceTask (
+    schedule_id INT NOT NULL,
+    due_at DATE NOT NULL,
+    status VARCHAR(20) DEFAULT 'Pending',
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP NULL,
+    completed_by_user_id INT,
+    PRIMARY KEY (schedule_id, due_at),
+    FOREIGN KEY (schedule_id) REFERENCES MaintenanceSchedule(id) ON DELETE CASCADE
+);

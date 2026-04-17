@@ -9,19 +9,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-left">
-            <a href="index.jsp" class="logo" style="text-decoration: none; color: white;">LOGO HERE???</a>
-        </div>
-        <div class="nav-middle">
-            <div class="nav-links">
-                <a href="koi.jsp">Koi</a>
-                <a href="ponds.jsp">Ponds</a>
-                <a href="treatments.jsp">Treatments</a>
-                <a href="logs.jsp">Logs</a>
-            </div>
-        </div>
-    </nav>
+    <header>
+        <h1>Koi Pond Manager</h1>
+        <nav>
+            <a href="index.jsp">Dashboard</a>
+            <a href="ponds.jsp">Ponds</a>
+            <a href="koi.jsp">Koi</a>
+            <a href="treatments.jsp">Treatments</a>
+            <a href="logs.jsp">Logs</a>
+        </nav>
+    </header>
 
     <main class="content-wrapper container">
         <header class="section-header-top">
@@ -115,5 +112,9 @@
         function openModal() { document.getElementById('maintenanceModal').style.display = 'block'; }
         function closeModal() { document.getElementById('maintenanceModal').style.display = 'none'; }
     </script>
+    
+    <footer>
+        <p>&copy; 2026 Koi Pond Manager &mdash; CS157A Team 3</p>
+    </footer>
 </body>
 </html>
