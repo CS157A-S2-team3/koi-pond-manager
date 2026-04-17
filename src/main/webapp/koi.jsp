@@ -1,4 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.sql.*, com.koi.MysqlCon" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,23 +32,64 @@
         	</header>
 
         	<div class="koi-grid-centered">
-            	<div class="koi-card-horizontal">
-                	<div class="koi-details-left">
-                    	<div class="koi-info">
-                        	<h3>Hirasawa (ID: 1)</h3>
-                        	<p><strong>Variety:</strong> Kohaku</p>
-                        	<p><strong>Breeder:</strong> Hirasawa</p>
-                        	<p><strong>Size:</strong> 61.20 cm</p>
-                    	</div>
-                    	<div class="koi-card-actions">
-                        	<a href="koiProfile.jsp?id=1" class="action-btn" style="text-decoration: none;">Update Profile</a>
-                    	</div>
-                	</div>
-                	<div class="koi-image-right">
-                    	<img src="https://via.placeholder.com/200x200.png?text=Koi+Image" alt="Koi ID 1">
-                	</div>
-            	</div>
-        	</div>
+                <%
+                    // Dynamic Database Connection 
+                    java.sql.Connection con = null;
+                    try {
+                        con = MysqlCon.getConnection();
+
+                        Statement stmt = con.createStatement();
+                        // Query to get all koi profiles 
+                        ResultSet rs = stmt.executeQuery("SELECT * FROM koi ORDER BY created_at DESC");
+
+                        boolean hasKoi = false;
+                        while (rs.next()) {
+                            hasKoi = true;
+                            // Retrieve data for each koi 
+                            int id = rs.getInt("id");
+                            String name = rs.getString("name");
+                            String variety = rs.getString("variety");
+                            String breeder = rs.getString("breeder");
+                            double size = rs.getDouble("size_cm");
+                %>
+                    <%-- DYNAMIC KOI CARD --%>
+                    <div class="koi-card-horizontal">
+                        <div class="koi-details-left">
+                            <div class="koi-info">
+                                <h3><%= name %> (ID: <%= id %>)</h3>
+                                <p><strong>Variety:</strong> <%= variety %></p>
+                                <p><strong>Breeder:</strong> <%= (breeder != null) ? breeder : "N/A" %></p>
+                                <p><strong>Size:</strong> <%= String.format("%.2f", size) %> cm</p>
+                            </div>
+                            <div class="koi-card-actions">
+                                <a href="koiProfile.jsp?id=<%= id %>" class="action-btn" style="text-decoration: none;">Update Profile</a>
+                            </div>
+                        </div>
+                        <div class="koi-image-right">
+                            <%-- Standard placeholder for now (Requirement 3.3.1) --%>
+                            <img src="https://via.placeholder.com/200x200.png?text=<%= variety %>" alt="Koi ID <%= id %>">
+                        </div>
+                    </div>
+                <%
+                        }
+                        
+                        // Empty State handling (if no koi are in the database yet)
+                        if (!hasKoi) {
+                %>
+                    <div class="empty-state" style="text-align: center; padding: 50px; color: #666;">
+                        <p>No koi profiles found. Click "Create New Koi Profile" to get started!</p>
+                    </div>
+                <%
+                        }
+                        rs.close();
+                        stmt.close();
+                    } catch (Exception e) {
+                        out.println("<p style='color:red;'>Error loading inventory: " + e.getMessage() + "</p>");
+                    } finally {
+                        if (con != null) try { con.close(); } catch (SQLException e) {}
+                    }
+                %>
+            </div>
     	</div>
 	</main>
 	

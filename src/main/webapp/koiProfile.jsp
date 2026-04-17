@@ -28,7 +28,7 @@
             	<form action="saveKoi" method="POST" enctype="multipart/form-data" class="koi-form">
                 	<div class="form-group">
                     	<label>Koi Image</label>
-                    	<input type="file" name="koi_image" accept="image/*">
+                    	<input type="file" name="koi_image" accept="image/*" class="black-border-input" onchange="previewImage(event)">
                 	</div>
                 
                 	<div class="form-group">
@@ -66,6 +66,17 @@
                     	<label>Size (cm)</label>
                     	<input type="number" step="0.01" name="size_cm" required>
                 	</div>
+                	
+                	<div class="form-row-koi">
+    					<div class="form-group-spaced">
+        					<label class="koi-label">Assigned Pond <span class="required">*</span></label>
+        					<select name="pond_id" class="black-border-input" required>
+            					<option value="">-- Select a Pond --</option>
+            					<option value="1">Main Display Pond (Pond 1)</option>
+            					<option value="2">Quarantine Tank 1 (Pond 2)</option>
+        					</select>
+    					</div>
+					</div>
 
                 	<div class="form-actions">
                     	<button type="submit" class="add-task-btn">Save Profile</button>

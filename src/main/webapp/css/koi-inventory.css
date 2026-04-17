@@ -1,8 +1,3 @@
-/* =========================================
-   Global & Container Fixes
-   ========================================= */
-
-/* Use colors defined in original style.css */
 :root {
     --koi-blue: #4a90e2;
     --koi-white: #ffffff;
@@ -15,14 +10,12 @@ body {
     padding: 0;
 }
 
-/* IMPORTANT FIX: Clears the fixed navigation bar */
 .content-wrapper {
     padding-top: 160px; 
     min-height: 100vh;
     box-sizing: border-box;
 }
 
-/* Centers the main container */
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -31,18 +24,13 @@ body {
     flex-direction: column;
 }
 
-/* =========================================
-   koi.jsp (Inventory) Specific Styles
-   ========================================= */
-
-/* Layout for the Header: Title left, Button right */
 .inventory-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 30px;
     width: 100%;
-    max-width: 800px; /* Match the width of your koi-grid-centered */
+    max-width: 800px;
     margin-left: auto;
     margin-right: auto;
 }
@@ -52,21 +40,16 @@ body {
     margin: 0;
 }
 
-/* The button inherits style from .add-task-btn in style.css */
-
-/* Grid to center the profiles in the middle of the screen */
 .koi-grid-centered {
     display: grid;
-    /* Forces single column grid and centers the column */
     grid-template-columns: minmax(300px, 800px); 
-    justify-content: center; /* Aligns grid in center of screen */
+    justify-content: center;
     gap: 20px;
     width: 100%;
 }
 
-/* New Horizontal Card Layout */
 .koi-card-horizontal {
-    display: flex; /* Flex row for Details (left) Image (right) */
+    display: flex;
     background: var(--koi-white);
     border: 1px solid #ddd;
     border-radius: 8px;
@@ -80,9 +63,8 @@ body {
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
-/* LEFT SIDE: Details */
 .koi-details-left {
-    flex: 2; /* Takes more space */
+    flex: 2;
     padding: 20px;
     display: flex;
     flex-direction: column;
@@ -104,11 +86,8 @@ body {
     margin-top: 15px;
 }
 
-/* The button inherits style from .action-btn in style.css */
-
-/* RIGHT SIDE: Image */
 .koi-image-right {
-    flex: 1; /* Takes less space */
+    flex: 1;
     background-color: #eee;
     border-left: 1px solid #ddd;
     display: flex;
@@ -120,23 +99,16 @@ body {
 .koi-image-right img {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Crop to fit container */
+    object-fit: cover;
 }
 
-
-/* =========================================
-   koiProfile.jsp Specific Styles
-   ========================================= */
-
-/* Centers the form box on the screen */
 .profile-centered-wrapper {
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* Changed to start so it doesn't float too low */
+    align-items: flex-start;
     padding-top: 20px;
 }
 
-/* The Styled Red Box */
 .red-form-box {
     background-color: var(--koi-blue);
     color: white;
@@ -173,7 +145,7 @@ body {
     padding: 10px;
     border: 1px solid #4a90e2;
     border-radius: 4px;
-    box-sizing: border-box; /* Crucial for padding */
+    box-sizing: border-box;
     background-color: rgba(255,255,255,0.9);
 }
 
@@ -193,7 +165,6 @@ body {
     margin-top: 30px;
 }
 
-/* Ensure the submit button looks good inside the red box */
 .koi-form button[type="submit"] {
     background-color: white;
     color: var(--koi-blue);
@@ -217,4 +188,8 @@ body {
 
 .red-form-box .cancel-link:hover {
     text-decoration: underline;
+}
+
+.form-group-spaced {
+    margin-bottom: 25px;
 }

@@ -35,32 +35,32 @@ public class TreatmentServlet extends HttpServlet {
             boolean quarantine = request.getParameter("quarantine") != null;
 
             if (pondId <= 0) {
-                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Please select a valid pond.", "UTF-8"));
+                response.sendRedirect("treatments.jsp?error=" + URLEncoder.encode("Please select a valid pond.", "UTF-8"));
                 return;
             }
 
             if (userId <= 0) {
-                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("User ID must be greater than 0.", "UTF-8"));
+                response.sendRedirect("treatments.jsp?error=" + URLEncoder.encode("User ID must be greater than 0.", "UTF-8"));
                 return;
             }
 
             if (medication == null || medication.trim().isEmpty()) {
-                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Medication is required.", "UTF-8"));
+                response.sendRedirect("treatments.jsp?error=" + URLEncoder.encode("Medication is required.", "UTF-8"));
                 return;
             }
 
             if (purpose == null || purpose.trim().isEmpty()) {
-                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Purpose is required.", "UTF-8"));
+                response.sendRedirect("treatments.jsp?error=" + URLEncoder.encode("Purpose is required.", "UTF-8"));
                 return;
             }
 
             if (dosage < 0) {
-                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Dosage cannot be negative.", "UTF-8"));
+                response.sendRedirect("treatments.jsp?error=" + URLEncoder.encode("Dosage cannot be negative.", "UTF-8"));
                 return;
             }
 
             if (duration <= 0) {
-                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Duration must be at least 1 day.", "UTF-8"));
+                response.sendRedirect("treatments.jsp?error=" + URLEncoder.encode("Duration must be at least 1 day.", "UTF-8"));
                 return;
             }
 
@@ -69,7 +69,7 @@ public class TreatmentServlet extends HttpServlet {
                 pondVolume = Double.parseDouble(pondVolumeText);
 
                 if (pondVolume < 0) {
-                    response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Pond volume cannot be negative.", "UTF-8"));
+                    response.sendRedirect("treatments.jsp?error=" + URLEncoder.encode("Pond volume cannot be negative.", "UTF-8"));
                     return;
                 }
             }
@@ -100,10 +100,10 @@ public class TreatmentServlet extends HttpServlet {
 
             ps.executeUpdate();
 
-            response.sendRedirect("treatment.jsp?success=1");
+            response.sendRedirect("treatments.jsp?success=1");
 
         } catch (NumberFormatException e) {
-            response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Please enter valid numeric values.", "UTF-8"));
+            response.sendRedirect("treatments.jsp?error=" + URLEncoder.encode("Please enter valid numeric values.", "UTF-8"));
         } catch (Exception e) {
             throw new ServletException(e);
         } finally {
