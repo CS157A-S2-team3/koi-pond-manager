@@ -19,3 +19,19 @@ CREATE TABLE IF NOT EXISTS ponds (
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+-- Treatment Table 
+CREATE TABLE treatments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    pond_id INT NOT NULL,
+    user_id INT NOT NULL,
+    medication VARCHAR(100),
+    purpose VARCHAR(255),
+    dosage DOUBLE,
+    dosage_unit VARCHAR(50),
+    duration INT,
+    pond_volume DOUBLE,
+    notes TEXT,
+    quarantine BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
