@@ -66,7 +66,7 @@ public class TreatmentServlet extends HttpServlet {
             }
 
             if (pondVolumeText == null || pondVolumeText.trim().isEmpty()) {
-                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Pond volume is required for dosage calculation.", "UTF-8"));
+                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Pond volume is required.", "UTF-8"));
                 return;
             }
 
@@ -97,6 +97,7 @@ public class TreatmentServlet extends HttpServlet {
 
             ps.executeUpdate();
 
+            // ✅ IMPORTANT: quarantine updates pond status
             if (quarantine) {
                 pondPs = con.prepareStatement("UPDATE ponds SET is_quarantine = ? WHERE id = ?");
                 pondPs.setBoolean(1, true);
@@ -111,26 +112,11 @@ public class TreatmentServlet extends HttpServlet {
         } catch (Exception e) {
             throw new ServletException(e);
         } finally {
-            try {
-                if (ps != null) {
-                    ps.close();
-                }
-            } catch (Exception e) {
-            }
-
-            try {
-                if (pondPs != null) {
-                    pondPs.close();
-                }
-            } catch (Exception e) {
-            }
-
-            try {
-                if (con != null) {
-                    con.close();
-                }
-            } catch (Exception e) {
-            }
+            try { if (ps != null) ps.close(); } catch (Exception e) {}
+            try { if (pondPs != null) pondPs.close(); } catch (Exception e) {}
+            try { if (con != null) con.close(); } catch (Exception e) {}
         }
     }
 }
+
+

@@ -63,7 +63,3 @@ CREATE TABLE IF NOT EXISTS water_tests (
     FOREIGN KEY (pond_id) REFERENCES ponds(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
-
-ALTER TABLE ponds
-ADD COLUMN is_quarantine BOOLEAN DEFAULT FALSE;
-

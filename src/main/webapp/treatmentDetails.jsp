@@ -166,7 +166,7 @@
             <a href="index.jsp">Dashboard</a>
             <a href="ponds.jsp">Ponds</a>
             <a href="koi.jsp">Koi</a>
-            <a href="treatment.jsp">Treatments</a>
+            <a href="treatments.jsp">Treatments</a>
             <a href="logs.jsp">Logs</a>
         </nav>
     </header>
@@ -175,7 +175,7 @@
         <div class="page-wrap">
             <div class="page-top">
                 <div class="breadcrumbs">
-                    <a href="index.jsp">Dashboard</a> / <a href="treatment.jsp">Treatments</a> / Details
+                    <a href="index.jsp">Dashboard</a> / <a href="treatments.jsp">Treatments</a> / Details
                 </div>
             </div>
 
@@ -295,7 +295,7 @@
                 %>
 
                 <div class="button-row">
-                    <a href="treatment.jsp" class="back-btn">← Back to Treatments</a>
+                    <a href="treatments.jsp" class="back-btn">← Back to Treatments</a>
                 </div>
             </div>
         </div>
