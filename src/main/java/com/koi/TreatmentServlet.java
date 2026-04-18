@@ -21,6 +21,7 @@ public class TreatmentServlet extends HttpServlet {
 
         Connection con = null;
         PreparedStatement ps = null;
+        PreparedStatement pondPs = null;
 
         try {
             int pondId = Integer.parseInt(request.getParameter("pondId"));
@@ -64,14 +65,16 @@ public class TreatmentServlet extends HttpServlet {
                 return;
             }
 
-            Double pondVolume = null;
-            if (pondVolumeText != null && !pondVolumeText.trim().isEmpty()) {
-                pondVolume = Double.parseDouble(pondVolumeText);
+            if (pondVolumeText == null || pondVolumeText.trim().isEmpty()) {
+                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Pond volume is required for dosage calculation.", "UTF-8"));
+                return;
+            }
 
-                if (pondVolume < 0) {
-                    response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Pond volume cannot be negative.", "UTF-8"));
-                    return;
-                }
+            double pondVolume = Double.parseDouble(pondVolumeText);
+
+            if (pondVolume <= 0) {
+                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Pond volume must be greater than 0.", "UTF-8"));
+                return;
             }
 
             con = MysqlCon.getConnection();
@@ -88,17 +91,18 @@ public class TreatmentServlet extends HttpServlet {
             ps.setDouble(5, dosage);
             ps.setString(6, dosageUnit);
             ps.setInt(7, duration);
-
-            if (pondVolume == null) {
-                ps.setNull(8, java.sql.Types.DOUBLE);
-            } else {
-                ps.setDouble(8, pondVolume);
-            }
-
+            ps.setDouble(8, pondVolume);
             ps.setString(9, notes);
             ps.setBoolean(10, quarantine);
 
             ps.executeUpdate();
+
+            if (quarantine) {
+                pondPs = con.prepareStatement("UPDATE ponds SET is_quarantine = ? WHERE id = ?");
+                pondPs.setBoolean(1, true);
+                pondPs.setInt(2, pondId);
+                pondPs.executeUpdate();
+            }
 
             response.sendRedirect("treatment.jsp?success=1");
 
@@ -110,6 +114,13 @@ public class TreatmentServlet extends HttpServlet {
             try {
                 if (ps != null) {
                     ps.close();
+                }
+            } catch (Exception e) {
+            }
+
+            try {
+                if (pondPs != null) {
+                    pondPs.close();
                 }
             } catch (Exception e) {
             }

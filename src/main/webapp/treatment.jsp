@@ -10,9 +10,14 @@
     <link rel="stylesheet" href="css/style.css">
 
     <style>
+        body {
+            background: #f5f7fb;
+        }
+
         .page-wrap {
-            max-width: 1200px;
+            max-width: 1240px;
             margin: 0 auto;
+            padding: 2rem 1.5rem 3rem;
         }
 
         .page-header-row {
@@ -27,6 +32,7 @@
         .page-title {
             margin: 0;
             font-size: 2rem;
+            color: #1f2937;
         }
 
         .page-subtitle {
@@ -36,23 +42,24 @@
         }
 
         .top-action-btn {
-            background: #4a90e2;
+            background: #2563eb;
             color: white;
             border: none;
             border-radius: 999px;
             padding: 0.9rem 1.4rem;
             font: inherit;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
+            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
         }
 
         .top-action-btn:hover {
-            background: #357bd8;
+            background: #1d4ed8;
         }
 
         .alert-box {
-            border-radius: 8px;
-            padding: 0.9rem 1rem;
+            border-radius: 10px;
+            padding: 0.95rem 1rem;
             margin-bottom: 1rem;
             font-weight: 600;
         }
@@ -72,13 +79,15 @@
         .content-card {
             background: #fff;
             border: 1px solid #e5e7eb;
-            border-radius: 10px;
+            border-radius: 14px;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
         }
 
         .content-card h3 {
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.35rem;
+            color: #1f2937;
         }
 
         .muted-text {
@@ -99,9 +108,10 @@
 
         .treatment-table th {
             text-align: left;
-            background: #dceaf8;
+            background: #eff6ff;
             padding: 1rem;
-            font-size: 1rem;
+            font-size: 0.95rem;
+            color: #1f2937;
         }
 
         .treatment-table td {
@@ -131,18 +141,20 @@
         }
 
         .table-btn {
-            background: #4a90e2;
+            background: #2563eb;
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             padding: 0.55rem 0.9rem;
             font: inherit;
             font-weight: 600;
             cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .table-btn:hover {
-            background: #357bd8;
+            background: #1d4ed8;
         }
 
         .bottom-grid {
@@ -152,32 +164,36 @@
         }
 
         .info-panel {
-            background: #dceaf8;
-            border: 1px solid #4a90e2;
-            border-radius: 10px;
-            padding: 2rem 1.5rem;
-            text-align: center;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 1.6rem;
             min-height: 220px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
         }
 
         .info-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            color: #1f70d1;
+            font-size: 2rem;
+            margin-bottom: 0.9rem;
         }
 
         .info-panel h3 {
-            margin-bottom: 0.8rem;
-            font-size: 1.5rem;
+            margin-bottom: 0.7rem;
+            font-size: 1.35rem;
+            color: #1f2937;
         }
 
         .info-panel p {
             margin: 0;
-            font-size: 1.2rem;
-            color: #374151;
+            font-size: 1rem;
+            color: #4b5563;
+            line-height: 1.65;
+        }
+
+        .info-panel ul {
+            margin-top: 0.8rem;
+            padding-left: 1.1rem;
+            color: #4b5563;
             line-height: 1.6;
         }
 
@@ -195,8 +211,8 @@
         .modal-box {
             background: white;
             width: 100%;
-            max-width: 680px;
-            border-radius: 14px;
+            max-width: 760px;
+            border-radius: 16px;
             padding: 2rem;
             border: 1px solid #e5e7eb;
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
@@ -205,20 +221,33 @@
         }
 
         .modal-header {
-            text-align: center;
             margin-bottom: 1.5rem;
         }
 
         .modal-header h2 {
-            margin: 0 0 0.75rem 0;
-            color: #1f70d1;
-            font-size: 2rem;
+            margin: 0 0 0.6rem 0;
+            color: #1d4ed8;
+            font-size: 1.85rem;
+        }
+
+        .modal-sub {
+            color: #6c757d;
+            line-height: 1.6;
         }
 
         .modal-divider {
             border: none;
-            border-top: 2px solid #dceaf8;
-            margin: 0;
+            border-top: 2px solid #e5eefb;
+            margin: 1rem 0 0 0;
+        }
+
+        .form-section-title {
+            font-size: 0.92rem;
+            font-weight: 800;
+            color: #374151;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin: 1.2rem 0 0.85rem;
         }
 
         .form-grid {
@@ -232,10 +261,36 @@
         }
 
         .form-group label {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             font-weight: 700;
             margin-bottom: 0.45rem;
-            font-size: 1rem;
+            font-size: 0.96rem;
+            color: #374151;
+        }
+
+        .field-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 999px;
+            text-transform: uppercase;
+        }
+
+        .badge-blue {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .badge-green {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-red {
+            background: #fee2e2;
+            color: #991b1b;
         }
 
         .form-group input,
@@ -243,18 +298,19 @@
         .form-group select {
             width: 100%;
             padding: 0.85rem 0.95rem;
-            border: 1px solid #bfc8d2;
-            border-radius: 8px;
+            border: 1px solid #cfd8e3;
+            border-radius: 10px;
             font: inherit;
             background: #fff;
+            box-sizing: border-box;
         }
 
         .form-group input:focus,
         .form-group textarea:focus,
         .form-group select:focus {
             outline: none;
-            border-color: #4a90e2;
-            box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.18);
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.12);
         }
 
         .form-group textarea {
@@ -270,10 +326,22 @@
             line-height: 1.5;
         }
 
+        .calc-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 0.3rem;
+        }
+
+        .calc-box strong {
+            color: #1d4ed8;
+        }
+
         .checkbox-box {
             border: 1px solid #f1d0d0;
             background: #fff8f8;
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 1rem;
         }
 
@@ -299,20 +367,20 @@
         .save-btn,
         .cancel-btn {
             border: none;
-            border-radius: 8px;
-            padding: 0.75rem 1.15rem;
+            border-radius: 10px;
+            padding: 0.78rem 1.15rem;
             font: inherit;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
         }
 
         .save-btn {
-            background: #1f70d1;
+            background: #1d4ed8;
             color: white;
         }
 
         .save-btn:hover {
-            background: #155db6;
+            background: #1e40af;
         }
 
         .cancel-btn {
@@ -348,7 +416,7 @@
             <a href="index.jsp">Dashboard</a>
             <a href="ponds.jsp">Ponds</a>
             <a href="koi.jsp">Koi</a>
-            <a href="treatments.jsp">Treatments</a>
+            <a href="treatment.jsp">Treatments</a>
             <a href="logs.jsp">Logs</a>
         </nav>
     </header>
@@ -363,7 +431,7 @@
             </div>
 
             <p class="page-subtitle">
-                Record treatment details, keep track of medication plans, and prepare for dosing support and quarantine-related actions.
+                Record treatment details, calculate dosage from pond volume, store treatment history, and support quarantine workflows.
             </p>
 
             <%
@@ -383,7 +451,7 @@
 
             <div class="content-card">
                 <h3>Treatment Records</h3>
-                <p class="muted-text">Stored treatment records for ponds and future treatment history tracking.</p>
+                <p class="muted-text">Stored treatment records with dosage, medication, duration, purpose, and quarantine status.</p>
 
                 <div class="table-wrap">
                     <table class="treatment-table">
@@ -408,7 +476,12 @@
                                 try {
                                     con = MysqlCon.getConnection();
                                     stmt = con.createStatement();
-                                    rs = stmt.executeQuery("SELECT t.*, p.name AS pond_name FROM treatments t LEFT JOIN ponds p ON t.pond_id = p.id ORDER BY t.created_at DESC");
+                                    rs = stmt.executeQuery(
+                                        "SELECT t.*, p.name AS pond_name " +
+                                        "FROM treatments t " +
+                                        "LEFT JOIN ponds p ON t.pond_id = p.id " +
+                                        "ORDER BY t.created_at DESC"
+                                    );
 
                                     while (rs.next()) {
                                         hasRows = true;
@@ -424,11 +497,9 @@
                                         <%= rs.getBoolean("quarantine") ? "Quarantine" : "Active" %>
                                     </span>
                                 </td>
-                            <td>
-        <a href="treatmentDetails.jsp?id=<%= rs.getInt("id") %>" class="table-btn" style="text-decoration:none; display:inline-block;">
-        View
-        </a>
-</td>
+                                <td>
+                                    <a href="treatmentDetails.jsp?id=<%= rs.getInt("id") %>" class="table-btn">View</a>
+                                </td>
                             </tr>
                             <%
                                     }
@@ -465,13 +536,18 @@
                 <div class="info-panel">
                     <div class="info-icon">🧮</div>
                     <h3>Dosing Calculator</h3>
-                    <p>Prepared for pond-volume-based treatment calculations.</p>
+                    <p>The form now supports pond-volume-based dosage calculation.</p>
+                    <ul>
+                        <li>Choose medication</li>
+                        <li>Enter pond volume</li>
+                        <li>Dosage auto-calculates</li>
+                    </ul>
                 </div>
 
                 <div class="info-panel">
                     <div class="info-icon">⚠️</div>
-                    <h3>Quarantine Rules</h3>
-                    <p>Supports future quarantine marking and transfer restrictions.</p>
+                    <h3>Quarantine Support</h3>
+                    <p>Marking a treatment as quarantine also marks the pond as quarantined for future transfer restrictions.</p>
                 </div>
             </div>
         </div>
@@ -485,10 +561,15 @@
         <div class="modal-box">
             <div class="modal-header">
                 <h2>Create Treatment Record</h2>
+                <div class="modal-sub">
+                    Log treatment details and auto-calculate dosage based on pond volume.
+                </div>
                 <hr class="modal-divider">
             </div>
 
             <form action="treatment" method="post">
+                <div class="form-section-title">Basic Info</div>
+
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="pondId">Pond</label>
@@ -526,26 +607,66 @@
 
                     <div class="form-group">
                         <label for="userId">Recorded By User ID</label>
-                        <input type="number" id="userId" name="userId" min="1" placeholder="e.g., 2" required>
+                        <input type="number" id="userId" name="userId" min="1" placeholder="e.g. 2" required>
+                    </div>
+                </div>
+
+                <div class="form-section-title">Treatment Details</div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="medication">
+                            <span>Medication</span>
+                            <span class="field-badge badge-blue">Required</span>
+                        </label>
+                        <select id="medication" name="medication" onchange="calculateDosage()" required>
+                            <option value="">Select medication</option>
+                            <option value="Salt">Salt</option>
+                            <option value="Praziquantel">Praziquantel</option>
+                            <option value="Methylene Blue">Methylene Blue</option>
+                        </select>
+                        <span class="help-text">Choose medication to calculate dosage.</span>
                     </div>
 
                     <div class="form-group">
-                        <label for="medication">Medication</label>
-                        <input type="text" id="medication" name="medication" placeholder="e.g., Salt" required>
+                        <label for="purpose">
+                            <span>Purpose</span>
+                            <span class="field-badge badge-blue">Required</span>
+                        </label>
+                        <input type="text" id="purpose" name="purpose" placeholder="e.g. Parasite treatment" required>
                     </div>
 
                     <div class="form-group">
-                        <label for="purpose">Purpose</label>
-                        <input type="text" id="purpose" name="purpose" placeholder="e.g., Parasite treatment" required>
+                        <label for="pondVolume">
+                            <span>Pond Volume</span>
+                            <span class="field-badge badge-green">Calculator</span>
+                        </label>
+                        <input type="number" id="pondVolume" name="pondVolume" step="0.01" min="0" placeholder="e.g. 500" oninput="calculateDosage()" required>
+                        <span class="help-text">Required for dosage calculation.</span>
                     </div>
 
                     <div class="form-group">
-                        <label for="dosage">Dosage</label>
-                        <input type="number" id="dosage" name="dosage" step="0.01" min="0" required>
+                        <label for="duration">
+                            <span>Duration (days)</span>
+                            <span class="field-badge badge-blue">Required</span>
+                        </label>
+                        <input type="number" id="duration" name="duration" min="1" required>
                     </div>
 
                     <div class="form-group">
-                        <label for="dosageUnit">Dosage Unit</label>
+                        <label for="dosage">
+                            <span>Dosage</span>
+                            <span class="field-badge badge-green">Auto</span>
+                        </label>
+                        <input type="number" id="dosage" name="dosage" step="0.01" min="0" readonly required>
+                        <span class="help-text">Auto-calculated from medication + pond volume.</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dosageUnit">
+                            <span>Dosage Unit</span>
+                            <span class="field-badge badge-green">Auto</span>
+                        </label>
                         <select id="dosageUnit" name="dosageUnit">
                             <option value="kg">Kilograms</option>
                             <option value="g">Grams</option>
@@ -555,19 +676,18 @@
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label for="duration">Duration (days)</label>
-                        <input type="number" id="duration" name="duration" min="1" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="pondVolume">Pond Volume</label>
-                        <input type="number" id="pondVolume" name="pondVolume" step="0.01" min="0" placeholder="Optional">
+                    <div class="form-group full-width">
+                        <div class="calc-box">
+                            <strong>Calculator guide:</strong><br>
+                            Salt = pond volume × 0.003 kg<br>
+                            Praziquantel = pond volume × 0.01 g<br>
+                            Methylene Blue = pond volume × 0.05 ml
+                        </div>
                     </div>
 
                     <div class="form-group full-width">
                         <label for="notes">Notes</label>
-                        <textarea id="notes" name="notes" placeholder="Add treatment observations or instructions..."></textarea>
+                        <textarea id="notes" name="notes" placeholder="Add treatment observations, instructions, or follow-up notes..."></textarea>
                     </div>
 
                     <div class="form-group full-width">
@@ -576,7 +696,9 @@
                                 <input type="checkbox" id="quarantine" name="quarantine">
                                 <div>
                                     <label for="quarantine" style="margin-bottom: 0.2rem;">Mark pond as quarantine</label>
-                                    <div class="help-text">Prepared for future restriction of koi transfers from quarantined ponds.</div>
+                                    <div class="help-text">
+                                        This also updates the pond quarantine status so koi transfers can be restricted from quarantined ponds.
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -598,6 +720,35 @@
 
         function closeModal() {
             document.getElementById("treatmentModal").style.display = "none";
+        }
+
+        function calculateDosage() {
+            const medication = document.getElementById("medication").value;
+            const pondVolume = parseFloat(document.getElementById("pondVolume").value);
+            const dosageField = document.getElementById("dosage");
+            const dosageUnitField = document.getElementById("dosageUnit");
+
+            if (!medication || isNaN(pondVolume) || pondVolume <= 0) {
+                dosageField.value = "";
+                return;
+            }
+
+            let dosage = 0;
+            let unit = "g";
+
+            if (medication === "Salt") {
+                dosage = pondVolume * 0.003;
+                unit = "kg";
+            } else if (medication === "Praziquantel") {
+                dosage = pondVolume * 0.01;
+                unit = "g";
+            } else if (medication === "Methylene Blue") {
+                dosage = pondVolume * 0.05;
+                unit = "ml";
+            }
+
+            dosageField.value = dosage.toFixed(2);
+            dosageUnitField.value = unit;
         }
 
         window.onclick = function(event) {
