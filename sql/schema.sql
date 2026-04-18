@@ -45,3 +45,17 @@ CREATE TABLE IF NOT EXISTS treatments (
     quarantine BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Water Test Table
+CREATE TABLE water_tests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    pond_id INT NOT NULL,
+    user_id INT NOT NULL,
+    ph DOUBLE,
+    temperature DOUBLE,
+    ammonia DOUBLE,
+    nitrite DOUBLE,
+    nitrate DOUBLE,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
