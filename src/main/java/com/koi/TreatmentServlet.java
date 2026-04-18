@@ -21,6 +21,7 @@ public class TreatmentServlet extends HttpServlet {
 
         Connection con = null;
         PreparedStatement ps = null;
+        PreparedStatement pondPs = null;
 
         try {
             int pondId = Integer.parseInt(request.getParameter("pondId"));
@@ -35,43 +36,45 @@ public class TreatmentServlet extends HttpServlet {
             boolean quarantine = request.getParameter("quarantine") != null;
 
             if (pondId <= 0) {
-                response.sendRedirect("treatments.jsp?error=" + URLEncoder.encode("Please select a valid pond.", "UTF-8"));
+                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Please select a valid pond.", "UTF-8"));
                 return;
             }
 
             if (userId <= 0) {
-                response.sendRedirect("treatments.jsp?error=" + URLEncoder.encode("User ID must be greater than 0.", "UTF-8"));
+                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("User ID must be greater than 0.", "UTF-8"));
                 return;
             }
 
             if (medication == null || medication.trim().isEmpty()) {
-                response.sendRedirect("treatments.jsp?error=" + URLEncoder.encode("Medication is required.", "UTF-8"));
+                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Medication is required.", "UTF-8"));
                 return;
             }
 
             if (purpose == null || purpose.trim().isEmpty()) {
-                response.sendRedirect("treatments.jsp?error=" + URLEncoder.encode("Purpose is required.", "UTF-8"));
+                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Purpose is required.", "UTF-8"));
                 return;
             }
 
             if (dosage < 0) {
-                response.sendRedirect("treatments.jsp?error=" + URLEncoder.encode("Dosage cannot be negative.", "UTF-8"));
+                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Dosage cannot be negative.", "UTF-8"));
                 return;
             }
 
             if (duration <= 0) {
-                response.sendRedirect("treatments.jsp?error=" + URLEncoder.encode("Duration must be at least 1 day.", "UTF-8"));
+                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Duration must be at least 1 day.", "UTF-8"));
                 return;
             }
 
-            Double pondVolume = null;
-            if (pondVolumeText != null && !pondVolumeText.trim().isEmpty()) {
-                pondVolume = Double.parseDouble(pondVolumeText);
+            if (pondVolumeText == null || pondVolumeText.trim().isEmpty()) {
+                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Pond volume is required.", "UTF-8"));
+                return;
+            }
 
-                if (pondVolume < 0) {
-                    response.sendRedirect("treatments.jsp?error=" + URLEncoder.encode("Pond volume cannot be negative.", "UTF-8"));
-                    return;
-                }
+            double pondVolume = Double.parseDouble(pondVolumeText);
+
+            if (pondVolume <= 0) {
+                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Pond volume must be greater than 0.", "UTF-8"));
+                return;
             }
 
             con = MysqlCon.getConnection();
@@ -88,38 +91,32 @@ public class TreatmentServlet extends HttpServlet {
             ps.setDouble(5, dosage);
             ps.setString(6, dosageUnit);
             ps.setInt(7, duration);
-
-            if (pondVolume == null) {
-                ps.setNull(8, java.sql.Types.DOUBLE);
-            } else {
-                ps.setDouble(8, pondVolume);
-            }
-
+            ps.setDouble(8, pondVolume);
             ps.setString(9, notes);
             ps.setBoolean(10, quarantine);
 
             ps.executeUpdate();
 
-            response.sendRedirect("treatments.jsp?success=1");
+            // ✅ IMPORTANT: quarantine updates pond status
+            if (quarantine) {
+                pondPs = con.prepareStatement("UPDATE ponds SET is_quarantine = ? WHERE id = ?");
+                pondPs.setBoolean(1, true);
+                pondPs.setInt(2, pondId);
+                pondPs.executeUpdate();
+            }
+
+            response.sendRedirect("treatment.jsp?success=1");
 
         } catch (NumberFormatException e) {
-            response.sendRedirect("treatments.jsp?error=" + URLEncoder.encode("Please enter valid numeric values.", "UTF-8"));
+            response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Please enter valid numeric values.", "UTF-8"));
         } catch (Exception e) {
             throw new ServletException(e);
         } finally {
-            try {
-                if (ps != null) {
-                    ps.close();
-                }
-            } catch (Exception e) {
-            }
-
-            try {
-                if (con != null) {
-                    con.close();
-                }
-            } catch (Exception e) {
-            }
+            try { if (ps != null) ps.close(); } catch (Exception e) {}
+            try { if (pondPs != null) pondPs.close(); } catch (Exception e) {}
+            try { if (con != null) con.close(); } catch (Exception e) {}
         }
     }
 }
+
+
