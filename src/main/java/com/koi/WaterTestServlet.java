@@ -24,7 +24,7 @@ public class WaterTestServlet extends HttpServlet {
 
         try {
             int pondId = Integer.parseInt(request.getParameter("pondId"));
-            int userId = 1; // temporary fallback user ID for now
+            int userId = (int) request.getSession().getAttribute("userId");
 
             double ph = Double.parseDouble(request.getParameter("ph"));
             double temperature = Double.parseDouble(request.getParameter("temperature"));
