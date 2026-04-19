@@ -3,18 +3,33 @@
 CREATE DATABASE IF NOT EXISTS koipondmanager;
 USE koipondmanager;
 
+-- Organizations table
+CREATE TABLE IF NOT EXISTS organizations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    timezone VARCHAR(50) NOT NULL DEFAULT 'UTC',
+    use_type ENUM('dealer', 'hobbyist', 'contractor') NOT NULL DEFAULT 'hobbyist',
+    unit_preference ENUM('imperial', 'metric') NOT NULL DEFAULT 'imperial',
+    stocking_density ENUM('conservative', 'standard', 'aggressive') NOT NULL DEFAULT 'standard',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     full_name VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    role ENUM('admin', 'manager', 'operator', 'viewer') NOT NULL DEFAULT 'viewer',
+    organization_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organization_id) REFERENCES organizations(id)
 );
 
 -- Ponds table
 CREATE TABLE IF NOT EXISTS ponds (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    organization_id INT NOT NULL,
     name VARCHAR(100) NOT NULL,
     location VARCHAR(255),
     volume DOUBLE NOT NULL,
@@ -27,7 +42,8 @@ CREATE TABLE IF NOT EXISTS ponds (
     uv_bulb_wattage DOUBLE DEFAULT 0,
     is_quarantine BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (organization_id) REFERENCES organizations(id)
 );
 
 -- Treatments table

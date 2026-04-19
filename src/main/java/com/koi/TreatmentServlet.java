@@ -25,7 +25,7 @@ public class TreatmentServlet extends HttpServlet {
 
         try {
             int pondId = Integer.parseInt(request.getParameter("pondId"));
-            int userId = Integer.parseInt(request.getParameter("userId"));
+            int userId = (int) request.getSession().getAttribute("userId");
             String medication = request.getParameter("medication");
             String purpose = request.getParameter("purpose");
             double dosage = Double.parseDouble(request.getParameter("dosage"));
@@ -37,11 +37,6 @@ public class TreatmentServlet extends HttpServlet {
 
             if (pondId <= 0) {
                 response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("Please select a valid pond.", "UTF-8"));
-                return;
-            }
-
-            if (userId <= 0) {
-                response.sendRedirect("treatment.jsp?error=" + URLEncoder.encode("User ID must be greater than 0.", "UTF-8"));
                 return;
             }
 

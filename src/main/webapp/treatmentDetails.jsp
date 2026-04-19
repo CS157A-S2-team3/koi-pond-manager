@@ -1,6 +1,12 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.sql.*" %>
 <%@ page import="com.koi.MysqlCon" %>
+<%
+    if (session.getAttribute("userId") == null) {
+        response.sendRedirect("login.jsp");
+        return;
+    }
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -169,6 +175,11 @@
             <a href="treatments.jsp">Treatments</a>
             <a href="logs.jsp">Logs</a>
         </nav>
+        <div class="user-menu">
+            <span class="user-name"><%= session.getAttribute("fullName") %></span>
+            <span class="user-role"><%= session.getAttribute("role") %></span>
+            <a href="logout" class="btn-logout">Sign Out</a>
+        </div>
     </header>
 
     <main>
