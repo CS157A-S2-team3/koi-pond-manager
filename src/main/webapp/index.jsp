@@ -1,5 +1,11 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.sql.*, com.koi.MysqlCon" %>
+<%
+    if (session.getAttribute("userId") == null) {
+        response.sendRedirect("login.jsp");
+        return;
+    }
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,6 +20,8 @@
     java.sql.Connection con = null;
     int totalPonds = 0;
     int totalTasks = 0;
+    int overdueTasks = 0;
+    int totalKoi = 0;
 
     try {
         con = MysqlCon.getConnection();
@@ -26,12 +34,26 @@
         }
         countRs.close();
         
+        // Get total koi count
+        ResultSet koiRs = countStmt.executeQuery("SELECT COUNT(*) AS total FROM koi");
+        if (koiRs.next()) {
+            totalKoi = koiRs.getInt("total");
+        }
+        koiRs.close();
+        
         // Get total task count
         ResultSet taskRs = countStmt.executeQuery("SELECT COUNT(*) AS total FROM MaintenanceTask WHERE status != 'Completed'");
         if (taskRs.next()) {
             totalTasks = taskRs.getInt("total");
         }
         taskRs.close();
+
+        // Get overdue task count
+        ResultSet overdueRs = countStmt.executeQuery("SELECT COUNT(*) AS total FROM MaintenanceTask WHERE status != 'Completed' AND due_at < CURDATE()");
+        if (overdueRs.next()) {
+            overdueTasks = overdueRs.getInt("total");
+        }
+        overdueRs.close();
         
         countStmt.close();
     } catch (Exception e) {
@@ -48,6 +70,11 @@
             <a href="treatments.jsp">Treatments</a>
             <a href="logs.jsp">Logs</a>
         </nav>
+        <div class="user-menu">
+            <span class="user-name"><%= session.getAttribute("fullName") %></span>
+            <span class="user-role"><%= session.getAttribute("role") %></span>
+            <a href="logout" class="btn-logout">Sign Out</a>
+        </div>
     </header>
 
     <main>
@@ -60,8 +87,8 @@
             </div>
             <div class="card">
                 <div class="card-label">Koi Inventory</div>
-                <div class="card-value">0</div>
-                <div class="card-sub">Coming soon</div>
+                <div class="card-value"><%= totalKoi %></div>
+                <div class="card-sub"><a href="koi.jsp">Manage koi inventory</a></div>
             </div>
             <div class="card">
                 <div class="card-label">Water Quality</div>
@@ -71,7 +98,12 @@
             <div class="card">
                 <div class="card-label">Open Tasks</div>
                 <div class="card-value"><%= totalTasks %></div>
-                <div class="card-sub"><a href="maintenance.jsp">Manage tasks</a></div>
+                <div class="card-sub">
+                    <a href="maintenance.jsp">Manage tasks</a>
+                    <% if (overdueTasks > 0) { %>
+                        <span style="color:#dc3545; font-weight:bold; margin-left:8px;">Overdue!</span>
+                    <% } %>
+                </div>
             </div>
         </div>
 

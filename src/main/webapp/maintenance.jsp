@@ -1,4 +1,11 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.sql.*, com.koi.MysqlCon, java.time.LocalDate" %>
+<%
+    if (session.getAttribute("userId") == null) {
+        response.sendRedirect("login.jsp");
+        return;
+    }
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,38 +47,89 @@
                             <th>Due Date</th>
                             <th>Status</th>
                             <th>Action</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr class="task-row urgent">
-                            <td>UV Bulb Inspection</td>
-                            <td>Monthly</td>
-                            <td>2026-03-24</td>
-                            <td><span class="status-flag overdue">Overdue</span></td>
-                            <td><button class="action-btn">Complete</button></td>
+                    <%
+                        Connection con = null;
+                        try {
+                            con = MysqlCon.getConnection();
+                            String sql = "SELECT t.schedule_id, t.due_at, t.status, t.notes, s.freq " +
+                                         "FROM MaintenanceTask t " +
+                                         "JOIN MaintenanceSchedule s ON t.schedule_id = s.id " +
+                                         "WHERE s.user_id = ? AND t.status != 'Completed' " +
+                                         "ORDER BY t.due_at ASC";
+                            PreparedStatement ps = con.prepareStatement(sql);
+                            ps.setInt(1, (int) session.getAttribute("userId"));
+                            ResultSet rs = ps.executeQuery();
+                            
+                            LocalDate today = LocalDate.now();
+                            boolean hasRows = false;
+                            
+                            while (rs.next()) {
+                                hasRows = true;
+                                String taskNotes = rs.getString("notes");
+                                String freq = rs.getString("freq");
+                                Date dueDate = rs.getDate("due_at");
+                                String status = rs.getString("status");
+                                int scheduleId = rs.getInt("schedule_id");
+                                
+                                LocalDate due = dueDate.toLocalDate();
+                                boolean isOverdue = due.isBefore(today) && !"Completed".equals(status);
+                                String displayStatus = isOverdue ? "Overdue" : status;
+                                String statusClass = isOverdue ? "overdue" : "pending";
+                                String rowClass = isOverdue ? "task-row urgent" : "task-row";
+                    %>
+                        <tr class="<%= rowClass %>">
+                            <td><%= taskNotes %></td>
+                            <td><%= freq %></td>
+                            <td><%= dueDate %></td>
+                            <td><span class="status-flag <%= statusClass %>"><%= displayStatus %></span></td>
+                            <td>
+                                <form action="completeTask" method="POST" style="display:inline;">
+                                    <input type="hidden" name="schedule_id" value="<%= scheduleId %>">
+                                    <input type="hidden" name="due_at" value="<%= dueDate %>">
+                                    <button type="submit" class="action-btn">Complete</button>
+                                </form>
+                            </td>
+                            <td class="menu-cell">
+                                <div class="three-dot-menu">
+                                    <button class="dot-btn" onclick="toggleMenu(this)">&#8942;</button>
+                                    <div class="dropdown-menu">
+                                        <form action="deactivateSchedule" method="POST">
+                                            <input type="hidden" name="schedule_id" value="<%= scheduleId %>">
+                                            <button type="submit" class="dropdown-item deactivate-item">Deactivate</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </td>
                         </tr>
-                        <tr class="task-row">
-                            <td>Water Change</td>
-                            <td>Weekly</td>
-                            <td>2026-04-15</td>
-                            <td><span class="status-flag pending">Pending</span></td>
-                            <td><button class="action-btn">Complete</button></td>
+                    <%
+                            }
+                            if (!hasRows) {
+                    %>
+                        <tr>
+                            <td colspan="5" style="text-align:center; color:#6c757d; padding:2rem;">
+                                No active tasks. Create a maintenance schedule to get started.
+                            </td>
                         </tr>
+                    <%
+                            }
+                            rs.close();
+                            ps.close();
+                        } catch (Exception e) {
+                    %>
+                        <tr>
+                            <td colspan="5" style="color:#dc3545;">Error loading tasks: <%= e.getMessage() %></td>
+                        </tr>
+                    <%
+                        } finally {
+                            if (con != null) try { con.close(); } catch (Exception e) {}
+                        }
+                    %>
                     </tbody>
                 </table>
-            </div>
-        </section>
-
-        <section class="maintenance-grid">
-            <div class="info-card">
-                <i class="fa fa-calculator"></i>
-                <h4>Feeding Calculation</h4>
-                <p>Based on breed, size, and age.</p>
-            </div>
-            <div class="info-card">
-                <i class="fa fa-flask"></i>
-                <h4>Dosing Calculator</h4>
-                <p>Based on pond volume.</p>
             </div>
         </section>
     </main>
@@ -109,8 +167,25 @@
     </div>
 
     <script>
-        function openModal() { document.getElementById('maintenanceModal').style.display = 'block'; }
+        function openModal() { document.getElementById('maintenanceModal').style.display = 'flex'; }
         function closeModal() { document.getElementById('maintenanceModal').style.display = 'none'; }
+        
+        function toggleMenu(btn) {
+            // Close all other open menus
+            document.querySelectorAll('.dropdown-menu.show').forEach(function(menu) {
+                if (menu !== btn.nextElementSibling) menu.classList.remove('show');
+            });
+            btn.nextElementSibling.classList.toggle('show');
+        }
+        
+        // Close menus when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.classList.contains('dot-btn')) {
+                document.querySelectorAll('.dropdown-menu.show').forEach(function(menu) {
+                    menu.classList.remove('show');
+                });
+            }
+        });
     </script>
     
     <footer>

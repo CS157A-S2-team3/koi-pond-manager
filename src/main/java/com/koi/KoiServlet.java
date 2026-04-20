@@ -3,31 +3,32 @@ package com.koi;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
+import java.io.InputStream;
 
 @WebServlet("/saveKoi")
-// Allows for future image file uploads (Requirement 3.3.1)
-//@MultipartConfig 
+@MultipartConfig(maxFileSize = 16177215) // up to 16MB
 public class KoiServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         
-        response.setContentType("text/html");
-        PrintWriter out = response.getWriter();
+        // Check if this is an update or insert
+        String idParam = request.getParameter("id");
+        boolean isUpdate = (idParam != null && !idParam.isEmpty());
+        int koiId = isUpdate ? Integer.parseInt(idParam) : -1;
 
-        // 1. Retrieve required fields
         String name = request.getParameter("name");
         String variety = request.getParameter("variety");
         
-        // Handling optional numerical fields with defensive coding
         Integer age = null;
         if (request.getParameter("age") != null && !request.getParameter("age").isEmpty()) {
             age = Integer.parseInt(request.getParameter("age"));
@@ -41,54 +42,88 @@ public class KoiServlet extends HttpServlet {
         String sex = request.getParameter("sex");
         String breeder = request.getParameter("breeder");
 
-        // FIX: The pond_id is likely not being passed correctly from the JSP.
-        // For testing, we will default it to a valid 'Ponds.id' or handle null.
-        // Replicating teammate's strategy.
         String pondIdRaw = request.getParameter("pond_id");
-        Integer pondId = (pondIdRaw != null && !pondIdRaw.isEmpty()) ? Integer.parseInt(pondIdRaw) : 1;
-        // In your production code, use standard connection handling
+        Integer pondId = (pondIdRaw != null && !pondIdRaw.isEmpty()) ? Integer.parseInt(pondIdRaw) : null;
 
-        Connection con = null;
-        PreparedStatement ps = null;
+        // Image extraction
+        InputStream imageInputStream = null;
+        Part filePart = request.getPart("koi_image");
+        if (filePart != null && filePart.getSize() > 0) {
+            imageInputStream = filePart.getInputStream();
+        }
 
-        try {
-            // Teammate's direct connection strategy for immediate testing
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            con = DriverManager.getConnection(
-                "jdbc:mysql://localhost:3306/koipondmanager?useSSL=false&serverTimezone=UTC",
-                "root", "kiqsi6-woznaq-Syzpan");
-            
-            // 2. SQL Insert based on Relational Schema
-            String sql = "INSERT INTO Koi (name, age, variety, breeder, sex, size_cm, pond_id) "
-                       + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-            
-            ps = con.prepareStatement(sql);
-            ps.setString(1, name);
-            
-            // Set required but optional INT/DOUBLE fields to NULL if not provided
-            if (age != null) ps.setInt(2, age); else ps.setNull(2, java.sql.Types.INTEGER);
-            ps.setString(3, variety);
-            ps.setString(4, breeder);
-            ps.setString(5, sex);
-            if (sizeCm != null) ps.setDouble(6, sizeCm); else ps.setNull(6, java.sql.Types.DOUBLE);
-            
-            // Setting a default Pond ID until the dynamic selector is active
-            if (pondId != null) ps.setInt(7, pondId); else ps.setNull(7, java.sql.Types.INTEGER);
+        try (Connection con = MysqlCon.getConnection()) {
+            // Validate pond exists
+            if (pondId != null) {
+                try (PreparedStatement check = con.prepareStatement("SELECT id FROM ponds WHERE id = ?")) {
+                    check.setInt(1, pondId);
+                    try (java.sql.ResultSet rs = check.executeQuery()) {
+                        if (!rs.next()) {
+                            pondId = null;
+                        }
+                    }
+                }
+            }
 
-            int result = ps.executeUpdate();
-            
-            if (result > 0) {
-                // Return success to the UI (matches blue theme success state)
+            if (isUpdate) {
+                // UPDATE existing koi
+                String sql;
+                PreparedStatement ps;
+                
+                if (imageInputStream != null) {
+                    sql = "UPDATE koi SET name=?, age=?, variety=?, breeder=?, sex=?, size_cm=?, pond_id=?, image_data=? WHERE id=?";
+                    ps = con.prepareStatement(sql);
+                    ps.setString(1, name);
+                    if (age != null) ps.setInt(2, age); else ps.setNull(2, java.sql.Types.INTEGER);
+                    ps.setString(3, variety);
+                    ps.setString(4, breeder);
+                    ps.setString(5, sex);
+                    if (sizeCm != null) ps.setDouble(6, sizeCm); else ps.setNull(6, java.sql.Types.DOUBLE);
+                    if (pondId != null) ps.setInt(7, pondId); else ps.setNull(7, java.sql.Types.INTEGER);
+                    ps.setBlob(8, imageInputStream);
+                    ps.setInt(9, koiId);
+                } else {
+                    sql = "UPDATE koi SET name=?, age=?, variety=?, breeder=?, sex=?, size_cm=?, pond_id=? WHERE id=?";
+                    ps = con.prepareStatement(sql);
+                    ps.setString(1, name);
+                    if (age != null) ps.setInt(2, age); else ps.setNull(2, java.sql.Types.INTEGER);
+                    ps.setString(3, variety);
+                    ps.setString(4, breeder);
+                    ps.setString(5, sex);
+                    if (sizeCm != null) ps.setDouble(6, sizeCm); else ps.setNull(6, java.sql.Types.DOUBLE);
+                    if (pondId != null) ps.setInt(7, pondId); else ps.setNull(7, java.sql.Types.INTEGER);
+                    ps.setInt(8, koiId);
+                }
+                
+                ps.executeUpdate();
+                ps.close();
+                response.sendRedirect("koi.jsp?success=true");
+                
+            } else {
+                // INSERT new koi
+                String sql = "INSERT INTO koi (name, age, variety, breeder, sex, size_cm, pond_id, image_data) "
+                           + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                PreparedStatement ps = con.prepareStatement(sql);
+                ps.setString(1, name);
+                if (age != null) ps.setInt(2, age); else ps.setNull(2, java.sql.Types.INTEGER);
+                ps.setString(3, variety);
+                ps.setString(4, breeder);
+                ps.setString(5, sex);
+                if (sizeCm != null) ps.setDouble(6, sizeCm); else ps.setNull(6, java.sql.Types.DOUBLE);
+                if (pondId != null) ps.setInt(7, pondId); else ps.setNull(7, java.sql.Types.INTEGER);
+                if (imageInputStream != null) {
+                    ps.setBlob(8, imageInputStream);
+                } else {
+                    ps.setNull(8, java.sql.Types.BLOB);
+                }
+                ps.executeUpdate();
+                ps.close();
                 response.sendRedirect("koi.jsp?success=true");
             }
 
         } catch (Exception e) {
             e.printStackTrace();
             response.sendRedirect("koiProfile.jsp?error=database");
-        } finally {
-            // Teammate's standard cleanup strategy
-            try { if (ps != null) ps.close(); } catch (Exception e) {}
-            try { if (con != null) con.close(); } catch (Exception e) {}
         }
     }
 }

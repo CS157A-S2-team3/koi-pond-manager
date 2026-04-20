@@ -11,7 +11,7 @@ body {
 }
 
 .content-wrapper {
-    padding-top: 160px; 
+    padding-top: 25px; 
     min-height: 100vh;
     box-sizing: border-box;
 }
@@ -53,7 +53,7 @@ body {
     background: var(--koi-white);
     border: 1px solid #ddd;
     border-radius: 8px;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     transition: transform 0.2s;
 }
@@ -110,11 +110,12 @@ body {
 }
 
 .red-form-box {
-    background-color: var(--koi-blue);
-    color: white;
+    background-color: #ffffff;
+    color: #333;
     padding: 40px;
     border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(74, 144, 226, 0.2);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    border: 1px solid #ddd;
     width: 100%;
     max-width: 600px;
 }
@@ -123,7 +124,7 @@ body {
     text-align: center;
     margin-top: 0;
     margin-bottom: 30px;
-    color: white;
+    color: var(--koi-blue);
 }
 
 .koi-form .form-group {
@@ -134,7 +135,7 @@ body {
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
-    color: #e3f2fd;
+    color: #444;
 }
 
 .koi-form input[type="text"],
@@ -143,10 +144,10 @@ body {
 .koi-form select {
     width: 100%;
     padding: 10px;
-    border: 1px solid #4a90e2;
+    border: 1px solid #333;
     border-radius: 4px;
     box-sizing: border-box;
-    background-color: rgba(255,255,255,0.9);
+    background-color: #fff;
 }
 
 .koi-form .form-row {
@@ -166,9 +167,9 @@ body {
 }
 
 .koi-form button[type="submit"] {
-    background-color: white;
-    color: var(--koi-blue);
-    border: 2px solid white;
+    background-color: var(--koi-blue);
+    color: white;
+    border: 2px solid var(--koi-blue);
     padding: 10px 20px;
     border-radius: 4px;
     cursor: pointer;
@@ -176,20 +177,135 @@ body {
 }
 
 .koi-form button[type="submit"]:hover {
-    background-color: var(--koi-dark-blue);
-    color: white;
+    background-color: #357abd;
+    border-color: #357abd;
 }
 
 .red-form-box .cancel-link {
-    color: white;
+    color: var(--koi-blue);
+    background-color: white;
+    border: 2px solid var(--koi-blue);
+    padding: 10px 20px;
+    border-radius: 4px;
     text-decoration: none;
-    padding: 10px 0;
+    font-weight: bold;
 }
 
 .red-form-box .cancel-link:hover {
-    text-decoration: underline;
+    background-color: var(--koi-blue);
+    color: white;
 }
 
 .form-group-spaced {
     margin-bottom: 25px;
+}
+
+.koi-modal-overlay {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.koi-modal-content {
+    background: #fff;
+    border-radius: 10px;
+    padding: 30px;
+    width: 90%;
+    max-width: 450px;
+    position: relative;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+
+.koi-modal-content h2 {
+    margin-top: 0;
+    color: var(--koi-blue);
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.koi-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 18px;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: #999;
+    line-height: 1;
+}
+
+.koi-modal-close:hover {
+    color: #333;
+}
+
+.koi-modal-details p {
+    margin: 10px 0;
+    font-size: 1rem;
+    color: #333;
+}
+
+/* Koi three-dot menu */
+.koi-card-horizontal {
+    position: relative;
+}
+
+.koi-dot-menu {
+    position: relative;
+    display: inline-block;
+    align-self: flex-start;
+    padding: 4px 4px 4px 0;
+}
+
+.koi-dot-menu .dot-btn {
+    background: none;
+    border: none;
+    font-size: 2.2rem;
+    cursor: pointer;
+    padding: 6px 10px;
+    line-height: 1;
+    color: #333;
+    border-radius: 4px;
+}
+
+.koi-dot-menu .dot-btn:hover {
+    background: #f0f0f0;
+}
+
+.koi-dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 200;
+    min-width: 120px;
+}
+
+.koi-dropdown-menu.show {
+    display: block;
+}
+
+.delete-item {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #dc3545;
+}
+
+.delete-item:hover {
+    background: #fde8e8;
 }
