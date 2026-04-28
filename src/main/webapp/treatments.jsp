@@ -578,7 +578,7 @@
                 <hr class="modal-divider">
             </div>
 
-            <form action="treatment" method="post">
+            <form action="treatments" method="post">
                 <div class="form-section-title">Basic Info</div>
 
                 <div class="form-grid">
