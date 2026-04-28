@@ -29,19 +29,20 @@
         String action = request.getParameter("action");
 
         if ("create".equals(action)) {
-            String sql = "INSERT INTO ponds (name, location, volume, volume_unit, length, width, depth, "
-                       + "filtration_type, uv_bulb_count, uv_bulb_wattage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO ponds (organization_id, name, location, volume, volume_unit, length, width, depth, "
+                       + "filtration_type, uv_bulb_count, uv_bulb_wattage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement ps = con.prepareStatement(sql);
-            ps.setString(1, request.getParameter("name"));
-            ps.setString(2, request.getParameter("location"));
-            ps.setDouble(3, Double.parseDouble(request.getParameter("volume")));
-            ps.setString(4, request.getParameter("volumeUnit"));
-            ps.setDouble(5, request.getParameter("length") != null && !request.getParameter("length").isEmpty() ? Double.parseDouble(request.getParameter("length")) : 0);
-            ps.setDouble(6, request.getParameter("width") != null && !request.getParameter("width").isEmpty() ? Double.parseDouble(request.getParameter("width")) : 0);
-            ps.setDouble(7, request.getParameter("depth") != null && !request.getParameter("depth").isEmpty() ? Double.parseDouble(request.getParameter("depth")) : 0);
-            ps.setString(8, request.getParameter("filtrationType"));
-            ps.setInt(9, request.getParameter("uvBulbCount") != null && !request.getParameter("uvBulbCount").isEmpty() ? Integer.parseInt(request.getParameter("uvBulbCount")) : 0);
-            ps.setDouble(10, request.getParameter("uvBulbWattage") != null && !request.getParameter("uvBulbWattage").isEmpty() ? Double.parseDouble(request.getParameter("uvBulbWattage")) : 0);
+            ps.setInt(1, (Integer) session.getAttribute("orgId"));
+            ps.setString(2, request.getParameter("name"));
+            ps.setString(3, request.getParameter("location"));
+            ps.setDouble(4, Double.parseDouble(request.getParameter("volume")));
+            ps.setString(5, request.getParameter("volumeUnit"));
+            ps.setDouble(6, request.getParameter("length") != null && !request.getParameter("length").isEmpty() ? Double.parseDouble(request.getParameter("length")) : 0);
+            ps.setDouble(7, request.getParameter("width") != null && !request.getParameter("width").isEmpty() ? Double.parseDouble(request.getParameter("width")) : 0);
+            ps.setDouble(8, request.getParameter("depth") != null && !request.getParameter("depth").isEmpty() ? Double.parseDouble(request.getParameter("depth")) : 0);
+            ps.setString(9, request.getParameter("filtrationType"));
+            ps.setInt(10, request.getParameter("uvBulbCount") != null && !request.getParameter("uvBulbCount").isEmpty() ? Integer.parseInt(request.getParameter("uvBulbCount")) : 0);
+            ps.setDouble(11, request.getParameter("uvBulbWattage") != null && !request.getParameter("uvBulbWattage").isEmpty() ? Double.parseDouble(request.getParameter("uvBulbWattage")) : 0);
             ps.executeUpdate();
             ps.close();
             success = "Pond created successfully.";
@@ -66,12 +67,26 @@
             success = "Pond updated successfully.";
 
         } else if ("delete".equals(action)) {
-            // Find the pond id and delete it
-            PreparedStatement ps = con.prepareStatement("DELETE FROM ponds WHERE id = ?");
-            ps.setInt(1, Integer.parseInt(request.getParameter("id")));
-            ps.executeUpdate();
-            ps.close();
-            success = "Pond deleted.";
+            int pondId = Integer.parseInt(request.getParameter("id"));
+            // Check if any koi are assigned to this pond
+            PreparedStatement koiCheck = con.prepareStatement("SELECT COUNT(*) AS cnt FROM koi WHERE pond_id = ?");
+            koiCheck.setInt(1, pondId);
+            ResultSet koiRs = koiCheck.executeQuery();
+            koiRs.next();
+            int koiCount = koiRs.getInt("cnt");
+            koiRs.close();
+            koiCheck.close();
+
+            if (koiCount > 0) {
+                error = "Cannot delete pond with " + koiCount + " koi assigned. Reassign them first.";
+            } else {
+                PreparedStatement ps = con.prepareStatement("DELETE FROM ponds WHERE id = ? AND organization_id = ?");
+                ps.setInt(1, pondId);
+                ps.setInt(2, (Integer) session.getAttribute("orgId"));
+                ps.executeUpdate();
+                ps.close();
+                success = "Pond deleted.";
+            }
         }
 
     } catch (Exception e) {
@@ -119,8 +134,9 @@
 
             try {
                 if (con != null && !con.isClosed()) {
-                    stmt = con.createStatement();
-                    rs = stmt.executeQuery("SELECT * FROM ponds ORDER BY name");
+                    PreparedStatement pStmt = con.prepareStatement("SELECT * FROM ponds WHERE organization_id = ? ORDER BY name");
+                    pStmt.setInt(1, (Integer) session.getAttribute("orgId"));
+                    rs = pStmt.executeQuery();
 
                     if (rs.isBeforeFirst()) {
                         hasPonds = true;
