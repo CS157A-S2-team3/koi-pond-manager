@@ -8,7 +8,6 @@
 %>
 
 <%
-    // Database connection
     java.sql.Connection con = null;
     String error = null;
     String success = null;
@@ -18,14 +17,12 @@
     try {
         con = MysqlCon.getConnection();
 
-        // Handle form submissions
         String action = request.getParameter("action");
 
         if ("create".equals(action)) {
             String pondIdStr = request.getParameter("pondId");
             Integer pondId = (pondIdStr != null && !pondIdStr.isEmpty()) ? Integer.parseInt(pondIdStr) : null;
 
-            // If pond specified, verify it belongs to this org
             if (pondId != null) {
                 PreparedStatement verifyPs = con.prepareStatement("SELECT id FROM ponds WHERE id = ? AND organization_id = ?");
                 verifyPs.setInt(1, pondId);
@@ -48,29 +45,33 @@
                 PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
                 ps.setInt(1, orgId);
                 ps.setString(2, request.getParameter("name"));
+
                 String ageStr = request.getParameter("age");
                 if (ageStr != null && !ageStr.isEmpty()) ps.setInt(3, Integer.parseInt(ageStr));
                 else ps.setNull(3, Types.INTEGER);
+
                 ps.setString(4, request.getParameter("variety"));
                 ps.setString(5, request.getParameter("breeder"));
                 ps.setString(6, request.getParameter("sex"));
+
                 String sizeStr = request.getParameter("sizeCm");
                 if (sizeStr != null && !sizeStr.isEmpty()) ps.setDouble(7, Double.parseDouble(sizeStr));
                 else ps.setNull(7, Types.DOUBLE);
+
                 ps.setString(8, request.getParameter("status"));
+
                 if (pondId != null) ps.setInt(9, pondId);
                 else ps.setNull(9, Types.INTEGER);
+
                 ps.setString(10, request.getParameter("notes"));
                 ps.executeUpdate();
 
-                // Get the new koi id for history
                 ResultSet keys = ps.getGeneratedKeys();
                 int newKoiId = 0;
                 if (keys.next()) newKoiId = keys.getInt(1);
                 keys.close();
                 ps.close();
 
-                // Record pond assignment history if assigned to a pond
                 if (pondId != null && newKoiId > 0) {
                     PreparedStatement histPs = con.prepareStatement(
                         "INSERT INTO koi_pond_history (koi_id, from_pond_id, to_pond_id, moved_by) VALUES (?, NULL, ?, ?)");
@@ -89,7 +90,6 @@
             String pondIdStr = request.getParameter("pondId");
             Integer newPondId = (pondIdStr != null && !pondIdStr.isEmpty()) ? Integer.parseInt(pondIdStr) : null;
 
-            // Verify koi belongs to this organization and get current pond_id
             PreparedStatement lookupPs = con.prepareStatement("SELECT pond_id FROM koi WHERE id = ? AND organization_id = ?");
             lookupPs.setInt(1, koiId);
             lookupPs.setInt(2, orgId);
@@ -102,7 +102,6 @@
                 lookupRs.close();
                 lookupPs.close();
 
-                // If new pond specified, verify it belongs to this organization
                 if (newPondId != null) {
                     PreparedStatement verifyPs = con.prepareStatement("SELECT id FROM ponds WHERE id = ? AND organization_id = ?");
                     verifyPs.setInt(1, newPondId);
@@ -115,40 +114,82 @@
                     verifyPs.close();
                 }
 
+                boolean transferAttempted = (oldPondId == null && newPondId != null)
+                    || (oldPondId != null && !oldPondId.equals(newPondId));
+
+                if (error == null && transferAttempted) {
+                    PreparedStatement quarantinePs = con.prepareStatement(
+                        "SELECT name FROM ponds WHERE id = ? AND is_quarantine = 1"
+                    );
+
+                    if (newPondId != null) {
+                        quarantinePs.setInt(1, newPondId);
+                        ResultSet quarantineRs = quarantinePs.executeQuery();
+
+                        if (quarantineRs.next()) {
+                            error = "Transfer blocked: " + quarantineRs.getString("name") + " is marked as quarantine.";
+                        }
+
+                        quarantineRs.close();
+                    }
+
+                    if (error == null && oldPondId != null) {
+                        quarantinePs.setInt(1, oldPondId);
+                        ResultSet quarantineRs = quarantinePs.executeQuery();
+
+                        if (quarantineRs.next()) {
+                            error = "Transfer blocked: " + quarantineRs.getString("name") + " is marked as quarantine.";
+                        }
+
+                        quarantineRs.close();
+                    }
+
+                    quarantinePs.close();
+                }
+
                 if (error == null) {
                     String sql = "UPDATE koi SET name=?, age=?, variety=?, breeder=?, sex=?, size_cm=?, status=?, pond_id=?, notes=? "
                                + "WHERE id=? AND organization_id=?";
                     PreparedStatement ps = con.prepareStatement(sql);
                     ps.setString(1, request.getParameter("name"));
+
                     String ageStr = request.getParameter("age");
                     if (ageStr != null && !ageStr.isEmpty()) ps.setInt(2, Integer.parseInt(ageStr));
                     else ps.setNull(2, Types.INTEGER);
+
                     ps.setString(3, request.getParameter("variety"));
                     ps.setString(4, request.getParameter("breeder"));
                     ps.setString(5, request.getParameter("sex"));
+
                     String sizeStr = request.getParameter("sizeCm");
                     if (sizeStr != null && !sizeStr.isEmpty()) ps.setDouble(6, Double.parseDouble(sizeStr));
                     else ps.setNull(6, Types.DOUBLE);
+
                     ps.setString(7, request.getParameter("status"));
+
                     if (newPondId != null) ps.setInt(8, newPondId);
                     else ps.setNull(8, Types.INTEGER);
+
                     ps.setString(9, request.getParameter("notes"));
                     ps.setInt(10, koiId);
                     ps.setInt(11, orgId);
                     ps.executeUpdate();
                     ps.close();
 
-                    // Record pond assignment history if pond changed
                     boolean pondChanged = (oldPondId == null && newPondId != null)
                         || (oldPondId != null && !oldPondId.equals(newPondId));
+
                     if (pondChanged) {
                         PreparedStatement histPs = con.prepareStatement(
                             "INSERT INTO koi_pond_history (koi_id, from_pond_id, to_pond_id, moved_by) VALUES (?, ?, ?, ?)");
                         histPs.setInt(1, koiId);
+
                         if (oldPondId != null) histPs.setInt(2, oldPondId);
                         else histPs.setNull(2, Types.INTEGER);
+
                         if (newPondId != null) histPs.setInt(3, newPondId);
                         else histPs.setNull(3, Types.INTEGER);
+
                         histPs.setInt(4, userId);
                         histPs.executeUpdate();
                         histPs.close();
@@ -160,17 +201,18 @@
 
         } else if ("delete".equals(action)) {
             int koiId = Integer.parseInt(request.getParameter("id"));
-            // Delete history first (FK constraint)
+
             PreparedStatement histPs = con.prepareStatement("DELETE FROM koi_pond_history WHERE koi_id = ?");
             histPs.setInt(1, koiId);
             histPs.executeUpdate();
             histPs.close();
-            // Delete koi with org check
+
             PreparedStatement ps = con.prepareStatement("DELETE FROM koi WHERE id = ? AND organization_id = ?");
             ps.setInt(1, koiId);
             ps.setInt(2, orgId);
             ps.executeUpdate();
             ps.close();
+
             success = "Koi deleted.";
         }
 
@@ -178,7 +220,6 @@
         error = e.getMessage();
     }
 
-    // Load ponds for dropdowns
     List<int[]> pondIds = new ArrayList<>();
     List<String> pondNames = new ArrayList<>();
     try {
@@ -193,7 +234,7 @@
             pondRs.close();
             pondPs.close();
         }
-    } catch (Exception e) { /* ignore */ }
+    } catch (Exception e) { }
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -230,11 +271,11 @@
         <% if (error != null) { %>
             <div class="alert alert-danger"><%= error %></div>
         <% } %>
+
         <% if (success != null) { %>
             <div class="alert alert-success"><%= success %></div>
         <% } %>
 
-        <%-- Load and display all koi --%>
         <%
             boolean hasKoi = false;
             ResultSet rs = null;
@@ -277,7 +318,6 @@
                                 default: badgeClass = "";
                             }
 
-                            // Escape strings for JS
                             String jsName = name != null ? name.replace("'", "\\'").replace("\"", "&quot;") : "";
                             String jsVariety = variety != null ? variety.replace("'", "\\'") : "";
                             String jsBreeder = breeder != null ? breeder.replace("'", "\\'") : "";
@@ -361,14 +401,12 @@
         <%
             }
 
-            // Close connection
             if (con != null) {
-                try { con.close(); } catch (SQLException e) { /* ignore */ }
+                try { con.close(); } catch (SQLException e) { }
             }
         %>
     </main>
 
-    <%-- Add Koi Modal --%>
     <div id="addModal" class="modal-overlay" onclick="if(event.target===this)closeModal('addModal')">
         <div class="modal">
             <div class="modal-header">
@@ -437,7 +475,6 @@
         </div>
     </div>
 
-    <%-- Edit Koi Modal --%>
     <div id="editModal" class="modal-overlay" onclick="if(event.target===this)closeModal('editModal')">
         <div class="modal">
             <div class="modal-header">
