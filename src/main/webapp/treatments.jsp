@@ -486,13 +486,15 @@
 
                                 try {
                                     con = MysqlCon.getConnection();
-                                    stmt = con.createStatement();
-                                    rs = stmt.executeQuery(
+                                    PreparedStatement pStmt = con.prepareStatement(
                                         "SELECT t.*, p.name AS pond_name " +
                                         "FROM treatments t " +
                                         "LEFT JOIN ponds p ON t.pond_id = p.id " +
+                                        "WHERE p.organization_id = ? " +
                                         "ORDER BY t.created_at DESC"
                                     );
+                                    pStmt.setInt(1, (Integer) session.getAttribute("orgId"));
+                                    rs = pStmt.executeQuery();
 
                                     while (rs.next()) {
                                         hasRows = true;
@@ -593,8 +595,9 @@
 
                                 try {
                                     pondCon = MysqlCon.getConnection();
-                                    pondStmt = pondCon.createStatement();
-                                    pondRs = pondStmt.executeQuery("SELECT id, name FROM ponds ORDER BY name");
+                                    PreparedStatement pondPStmt = pondCon.prepareStatement("SELECT id, name FROM ponds WHERE organization_id = ? ORDER BY name");
+                                    pondPStmt.setInt(1, (Integer) session.getAttribute("orgId"));
+                                    pondRs = pondPStmt.executeQuery();
 
                                     while (pondRs.next()) {
                             %>

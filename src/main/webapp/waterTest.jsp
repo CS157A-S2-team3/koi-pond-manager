@@ -585,8 +585,9 @@
 
                                         try {
                                             pondCon = MysqlCon.getConnection();
-                                            pondStmt = pondCon.createStatement();
-                                            pondRs = pondStmt.executeQuery("SELECT id, name FROM ponds ORDER BY name");
+                                            PreparedStatement pondPStmt = pondCon.prepareStatement("SELECT id, name FROM ponds WHERE organization_id = ? ORDER BY name");
+                                            pondPStmt.setInt(1, (Integer) session.getAttribute("orgId"));
+                                            pondRs = pondPStmt.executeQuery();
 
                                             while (pondRs.next()) {
                                     %>
