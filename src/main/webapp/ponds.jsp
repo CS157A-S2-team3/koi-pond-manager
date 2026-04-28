@@ -67,12 +67,26 @@
             success = "Pond updated successfully.";
 
         } else if ("delete".equals(action)) {
-            // Find the pond id and delete it
-            PreparedStatement ps = con.prepareStatement("DELETE FROM ponds WHERE id = ?");
-            ps.setInt(1, Integer.parseInt(request.getParameter("id")));
-            ps.executeUpdate();
-            ps.close();
-            success = "Pond deleted.";
+            int pondId = Integer.parseInt(request.getParameter("id"));
+            // Check if any koi are assigned to this pond
+            PreparedStatement koiCheck = con.prepareStatement("SELECT COUNT(*) AS cnt FROM koi WHERE pond_id = ?");
+            koiCheck.setInt(1, pondId);
+            ResultSet koiRs = koiCheck.executeQuery();
+            koiRs.next();
+            int koiCount = koiRs.getInt("cnt");
+            koiRs.close();
+            koiCheck.close();
+
+            if (koiCount > 0) {
+                error = "Cannot delete pond with " + koiCount + " koi assigned. Reassign them first.";
+            } else {
+                PreparedStatement ps = con.prepareStatement("DELETE FROM ponds WHERE id = ? AND organization_id = ?");
+                ps.setInt(1, pondId);
+                ps.setInt(2, (Integer) session.getAttribute("orgId"));
+                ps.executeUpdate();
+                ps.close();
+                success = "Pond deleted.";
+            }
         }
 
     } catch (Exception e) {
