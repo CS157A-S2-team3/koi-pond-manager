@@ -520,32 +520,6 @@
                 %>
             </div>
 
-            <div class="summary-cards">
-                <div class="card">
-                    <div class="card-label"><span class="card-icon">🧪</span>pH Target</div>
-                    <div class="card-value">6.5–8.5</div>
-                    <div class="card-sub">Ideal pond balance</div>
-                </div>
-
-                <div class="card">
-                    <div class="card-label"><span class="card-icon">⚠️</span>Ammonia</div>
-                    <div class="card-value">&lt; 0.25</div>
-                    <div class="card-sub">Keep very low</div>
-                </div>
-
-                <div class="card">
-                    <div class="card-label"><span class="card-icon">📈</span>Nitrite / Nitrate</div>
-                    <div class="card-value">&lt; 0.25 / &lt; 40</div>
-                    <div class="card-sub">Track changes over time</div>
-                </div>
-
-                <div class="card">
-                    <div class="card-label"><span class="card-icon">🌡️</span>Temperature</div>
-                    <div class="card-value">50–85°F</div>
-                    <div class="card-sub">Typical koi-safe range</div>
-                </div>
-            </div>
-
             <div class="content-layout">
                 <div class="section">
                     <h2>Water Test Entry</h2>

@@ -200,12 +200,15 @@
                         int id = Integer.parseInt(request.getParameter("id"));
 
                         con = MysqlCon.getConnection();
-                        ps = con.prepareStatement(
-                            "SELECT t.*, p.name AS pond_name " +
-                            "FROM treatments t " +
-                            "LEFT JOIN ponds p ON t.pond_id = p.id " +
-                            "WHERE t.id = ?"
-                        );
+
+                ps = con.prepareStatement(
+    "SELECT t.*, p.name AS pond_name, u.full_name AS recorded_by_name " +
+    "FROM treatments t " +
+    "LEFT JOIN ponds p ON t.pond_id = p.id " +
+    "LEFT JOIN users u ON t.user_id = u.id " +
+    "WHERE t.id = ?"
+);
+
                         ps.setInt(1, id);
                         rs = ps.executeQuery();
 
@@ -247,13 +250,13 @@
                                     <%= rs.getString("pond_name") != null ? rs.getString("pond_name") : ("Pond " + rs.getInt("pond_id")) %>
                                 </div>
                             </div>
-
+                            
                             <div class="detail-item">
-                                <div class="detail-label">Recorded By User ID</div>
-                                <div class="detail-value"><%= rs.getInt("user_id") %></div>
-                            </div>
-                        </div>
-                    </div>
+    <div class="detail-label">Recorded By</div>
+    <div class="detail-value">
+        <%= rs.getString("recorded_by_name") != null ? rs.getString("recorded_by_name") : ("User " + rs.getInt("user_id")) %>
+    </div>
+</div>
 
                     <div class="section-block">
                         <h3>Dosage Details</h3>
