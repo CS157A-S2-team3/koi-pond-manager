@@ -46,22 +46,6 @@ CREATE TABLE IF NOT EXISTS ponds (
     FOREIGN KEY (organization_id) REFERENCES organizations(id)
 );
 
--- Koi table
-CREATE TABLE IF NOT EXISTS koi (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    name        VARCHAR(100)  NOT NULL,
-    age         INT,
-    variety     VARCHAR(100),
-    breeder     VARCHAR(100),
-    sex         VARCHAR(10),
-    size_cm     DOUBLE,
-    pond_id     INT,
-    image_data  MEDIUMBLOB,
-    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (pond_id) REFERENCES ponds(id) ON DELETE SET NULL
-);
-
 -- Treatments table
 CREATE TABLE IF NOT EXISTS treatments (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -103,6 +87,40 @@ CREATE TABLE IF NOT EXISTS MaintenanceTask (
     completed_by_user_id INT,
     PRIMARY KEY (schedule_id, due_at),
     FOREIGN KEY (schedule_id) REFERENCES MaintenanceSchedule(id) ON DELETE CASCADE
+);
+
+-- Koi table
+CREATE TABLE IF NOT EXISTS koi (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    organization_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    age INT,
+    variety VARCHAR(100),
+    breeder VARCHAR(100),
+    sex ENUM('male', 'female', 'unknown') NOT NULL DEFAULT 'unknown',
+    size_cm DOUBLE,
+    status ENUM('healthy', 'injured', 'sick', 'deceased') NOT NULL DEFAULT 'healthy',
+    pond_id INT,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (organization_id) REFERENCES organizations(id),
+    FOREIGN KEY (pond_id) REFERENCES ponds(id)
+);
+
+-- Koi pond assignment history
+CREATE TABLE IF NOT EXISTS koi_pond_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    koi_id INT NOT NULL,
+    from_pond_id INT,
+    to_pond_id INT,
+    moved_by INT NOT NULL,
+    moved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    notes VARCHAR(255),
+    FOREIGN KEY (koi_id) REFERENCES koi(id),
+    FOREIGN KEY (from_pond_id) REFERENCES ponds(id),
+    FOREIGN KEY (to_pond_id) REFERENCES ponds(id),
+    FOREIGN KEY (moved_by) REFERENCES users(id)
 );
 
 -- Water tests table

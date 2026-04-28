@@ -152,15 +152,17 @@
 
                 try {
                     con = MysqlCon.getConnection();
-                    stmt = con.createStatement();
-                    rs = stmt.executeQuery(
+                    PreparedStatement pStmt = con.prepareStatement(
                         "SELECT wt.id, wt.pond_id, wt.user_id, wt.ph, wt.temperature, " +
                         "wt.ammonia, wt.nitrite, wt.nitrate, wt.notes, wt.created_at, " +
                         "p.name AS pond_name " +
                         "FROM water_tests wt " +
                         "LEFT JOIN ponds p ON wt.pond_id = p.id " +
+                        "WHERE p.organization_id = ? " +
                         "ORDER BY wt.created_at DESC"
                     );
+                    pStmt.setInt(1, (Integer) session.getAttribute("orgId"));
+                    rs = pStmt.executeQuery();
             %>
 
             <div class="table-wrapper">

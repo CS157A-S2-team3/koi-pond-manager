@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    
+ 
     <header>
         <h1>Koi Pond Manager</h1>
         <nav>
@@ -169,6 +169,5 @@
 	<footer>
         <p>&copy; 2026 Koi Pond Manager &mdash; CS157A Team 3</p>
     </footer>
-
 </body>
 </html>

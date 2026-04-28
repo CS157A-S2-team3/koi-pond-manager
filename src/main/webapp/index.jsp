@@ -27,8 +27,9 @@
         con = MysqlCon.getConnection();
 
         // Get total pond count
-        Statement countStmt = con.createStatement();
-        ResultSet countRs = countStmt.executeQuery("SELECT COUNT(*) AS total FROM ponds");
+        PreparedStatement countStmt = con.prepareStatement("SELECT COUNT(*) AS total FROM ponds WHERE organization_id = ?");
+        countStmt.setInt(1, (Integer) session.getAttribute("orgId"));
+        ResultSet countRs = countStmt.executeQuery();
         if (countRs.next()) {
             totalPonds = countRs.getInt("total");
         }
@@ -56,6 +57,16 @@
         overdueRs.close();
         
         countStmt.close();
+
+        // Get total koi count (excluding deceased)
+        PreparedStatement koiCountStmt = con.prepareStatement("SELECT COUNT(*) AS total FROM koi WHERE organization_id = ? AND status != 'deceased'");
+        koiCountStmt.setInt(1, (Integer) session.getAttribute("orgId"));
+        ResultSet koiCountRs = koiCountStmt.executeQuery();
+        if (koiCountRs.next()) {
+            totalKoi = koiCountRs.getInt("total");
+        }
+        koiCountRs.close();
+        koiCountStmt.close();
     } catch (Exception e) {
         // Connection failed 
     }
@@ -124,8 +135,9 @@
                 <%
                     try {
                         if (con != null && !con.isClosed()) {
-                            Statement stmt = con.createStatement();
-                            ResultSet rs = stmt.executeQuery("SELECT * FROM ponds ORDER BY name");
+                            PreparedStatement stmt = con.prepareStatement("SELECT * FROM ponds WHERE organization_id = ? ORDER BY name");
+                            stmt.setInt(1, (Integer) session.getAttribute("orgId"));
+                            ResultSet rs = stmt.executeQuery();
 
                             boolean hasRows = false;
                             while (rs.next()) {
