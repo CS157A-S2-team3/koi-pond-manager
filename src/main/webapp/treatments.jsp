@@ -7,6 +7,82 @@
         return;
     }
 %>
+
+<%
+    // Database connection
+    java.sql.Connection treatCon = null;
+    String error = request.getParameter("error");
+    String success = null;
+
+    try {
+        treatCon = MysqlCon.getConnection();
+
+        // Handle form submissions
+        String action = request.getParameter("action");
+
+        if ("create".equals(action)) {
+            int pondId = Integer.parseInt(request.getParameter("pondId"));
+            int orgId = (Integer) session.getAttribute("orgId");
+
+            // Verify the pond belongs to the user's organization
+            PreparedStatement verifyPs = treatCon.prepareStatement("SELECT id FROM ponds WHERE id = ? AND organization_id = ?");
+            verifyPs.setInt(1, pondId);
+            verifyPs.setInt(2, orgId);
+            ResultSet verifyRs = verifyPs.executeQuery();
+            if (!verifyRs.next()) {
+                verifyRs.close();
+                verifyPs.close();
+                error = "Invalid pond selection.";
+            } else {
+                verifyRs.close();
+                verifyPs.close();
+
+                int userId = (Integer) session.getAttribute("userId");
+                String medication = request.getParameter("medication");
+                String purpose = request.getParameter("purpose");
+                double dosage = Double.parseDouble(request.getParameter("dosage"));
+                String dosageUnit = request.getParameter("dosageUnit");
+                int duration = Integer.parseInt(request.getParameter("duration"));
+                double pondVolume = Double.parseDouble(request.getParameter("pondVolume"));
+                String notes = request.getParameter("notes");
+                boolean quarantine = request.getParameter("quarantine") != null;
+
+                String sql = "INSERT INTO treatments "
+                        + "(pond_id, user_id, medication, purpose, dosage, dosage_unit, duration, pond_volume, notes, quarantine) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                PreparedStatement ps = treatCon.prepareStatement(sql);
+                ps.setInt(1, pondId);
+                ps.setInt(2, userId);
+                ps.setString(3, medication);
+                ps.setString(4, purpose);
+                ps.setDouble(5, dosage);
+                ps.setString(6, dosageUnit);
+                ps.setInt(7, duration);
+                ps.setDouble(8, pondVolume);
+                ps.setString(9, notes);
+                ps.setBoolean(10, quarantine);
+                ps.executeUpdate();
+                ps.close();
+
+                // Quarantine updates pond status
+                if (quarantine) {
+                    PreparedStatement pondPs = treatCon.prepareStatement("UPDATE ponds SET is_quarantine = ? WHERE id = ? AND organization_id = ?");
+                    pondPs.setBoolean(1, true);
+                    pondPs.setInt(2, pondId);
+                    pondPs.setInt(3, orgId);
+                    pondPs.executeUpdate();
+                    pondPs.close();
+                }
+
+                success = "Treatment created successfully.";
+            }
+        }
+
+    } catch (Exception e) {
+        error = e.getMessage();
+    }
+%>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -446,11 +522,9 @@
             </p>
 
             <%
-                String success = request.getParameter("success");
-                String error = request.getParameter("error");
-                if ("1".equals(success)) {
+                if (success != null) {
             %>
-                <div class="alert-box alert-success">Treatment added successfully.</div>
+                <div class="alert-box alert-success"><%= success %></div>
             <%
                 }
                 if (error != null && !error.trim().isEmpty()) {
@@ -580,7 +654,8 @@
                 <hr class="modal-divider">
             </div>
 
-            <form action="treatments" method="post">
+            <form action="treatments.jsp" method="post">
+                <input type="hidden" name="action" value="create">
                 <div class="form-section-title">Basic Info</div>
 
                 <div class="form-grid">
