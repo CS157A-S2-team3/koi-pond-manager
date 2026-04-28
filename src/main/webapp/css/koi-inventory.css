@@ -42,26 +42,94 @@ body {
 
 .koi-grid-centered {
     display: grid;
-    grid-template-columns: minmax(300px, 800px); 
+    grid-template-columns: minmax(280px, 480px);
     justify-content: center;
-    gap: 20px;
+    gap: 16px;
     width: 100%;
 }
 
 .koi-card-horizontal {
-    display: flex;
+    position: relative;
     background: var(--koi-white);
     border: 1px solid #ddd;
     border-radius: 8px;
     overflow: visible;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     transition: transform 0.2s;
+    padding: 16px 16px 14px 16px;
+    box-sizing: border-box;
 }
 
 .koi-card-horizontal:hover {
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
+
+/* Card body: stacks name → stats → action vertically */
+.koi-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.koi-card-name {
+    padding-right: 36px; /* leave room for dot-menu */
+}
+
+.koi-card-name h3 {
+    margin: 0 0 10px 0;
+    color: var(--koi-dark-blue);
+    font-size: 1.05rem;
+}
+
+.koi-card-stats {
+    display: flex;
+    flex-direction: row;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.koi-card-stats span {
+    font-size: 0.88rem;
+    color: #555;
+    padding: 2px 0;
+}
+
+.koi-card-actions {
+    margin-top: 4px;
+}
+
+/* Status text colors */
+.koi-status-text {
+    font-weight: 600;
+    text-transform: capitalize;
+}
+.koi-status-text.status-healthy  { color: #28a745; }
+.koi-status-text.status-sick     { color: #e0b800; }
+.koi-status-text.status-injured  { color: #fd7e14; }
+.koi-status-text.status-deceased { color: #dc3545; }
+
+/* Health bar */
+.koi-health-bar-wrapper {
+    width: 100%;
+    height: 7px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    margin: 8px 0 10px 0;
+    overflow: hidden;
+}
+
+.koi-health-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.koi-health-bar.health-healthy  { width: 100%; background-color: #28a745; }
+.koi-health-bar.health-sick     { width: 50%;  background-color: #e0b800; }
+.koi-health-bar.health-injured  { width: 33%;  background-color: #fd7e14; }
+.koi-health-bar.health-deceased { width: 0%;   background-color: transparent; }
 
 .koi-details-left {
     flex: 2;
@@ -80,26 +148,6 @@ body {
     margin: 5px 0;
     color: #555;
     font-size: 0.95rem;
-}
-
-.koi-card-actions {
-    margin-top: 15px;
-}
-
-.koi-image-right {
-    flex: 1;
-    background-color: #eee;
-    border-left: 1px solid #ddd;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-}
-
-.koi-image-right img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
 }
 
 .profile-centered-wrapper {
@@ -196,8 +244,12 @@ body {
     color: white;
 }
 
-.form-group-spaced {
-    margin-bottom: 25px;
+.koi-form input[readonly],
+.koi-form select[disabled] {
+    background-color: #f0f0f0;
+    color: #888;
+    cursor: not-allowed;
+    border-color: #ccc;
 }
 
 .koi-modal-overlay {
@@ -218,7 +270,9 @@ body {
     border-radius: 10px;
     padding: 30px;
     width: 90%;
-    max-width: 450px;
+    max-width: 560px;
+    max-height: 85vh;
+    overflow-y: auto;
     position: relative;
     box-shadow: 0 8px 30px rgba(0,0,0,0.2);
 }
@@ -250,16 +304,61 @@ body {
     color: #333;
 }
 
-/* Koi three-dot menu */
-.koi-card-horizontal {
-    position: relative;
+/* Pond assignment history inside modal */
+.koi-modal-history {
+    margin-top: 20px;
+    border-top: 1px solid #eee;
+    padding-top: 14px;
 }
 
+.koi-modal-history h3 {
+    margin: 0 0 10px 0;
+    font-size: 0.95rem;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.koi-history-empty {
+    font-size: 0.88rem;
+    color: #999;
+    margin: 0;
+}
+
+.koi-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.koi-history-table thead tr {
+    background-color: #f4f4f4;
+}
+
+.koi-history-table th {
+    text-align: left;
+    padding: 6px 8px;
+    color: #555;
+    font-weight: 600;
+    border-bottom: 1px solid #ddd;
+}
+
+.koi-history-table td {
+    padding: 6px 8px;
+    color: #333;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.koi-history-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Koi three-dot menu */
 .koi-dot-menu {
-    position: relative;
+    position: absolute;
+    top: 10px;
+    right: 10px;
     display: inline-block;
-    align-self: flex-start;
-    padding: 4px 4px 4px 0;
 }
 
 .koi-dot-menu .dot-btn {

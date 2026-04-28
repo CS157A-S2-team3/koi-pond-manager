@@ -7,9 +7,10 @@
     String existingName = "";
     String existingVariety = "";
     String existingBreeder = "";
-    String existingSex = "Unknown";
+    String existingSex = "unknown";
     String existingAge = "";
     String existingSize = "";
+    String existingStatus = "healthy";
     int existingPondId = -1;
     
     if (koiIdParam != null && !koiIdParam.isEmpty()) {
@@ -24,11 +25,12 @@
                 existingName = rs.getString("name") != null ? rs.getString("name") : "";
                 existingVariety = rs.getString("variety") != null ? rs.getString("variety") : "";
                 existingBreeder = rs.getString("breeder") != null ? rs.getString("breeder") : "";
-                existingSex = rs.getString("sex") != null ? rs.getString("sex") : "Unknown";
+                existingSex = rs.getString("sex") != null ? rs.getString("sex") : "unknown";
                 int age = rs.getInt("age");
                 existingAge = rs.wasNull() ? "" : String.valueOf(age);
                 double size = rs.getDouble("size_cm");
                 existingSize = rs.wasNull() ? "" : String.valueOf(size);
+                existingStatus = rs.getString("status") != null ? rs.getString("status") : "healthy";
                 existingPondId = rs.getInt("pond_id");
                 if (rs.wasNull()) existingPondId = -1;
             }
@@ -68,31 +70,23 @@
     	<div class="profile-centered-wrapper">
         	<div class="red-form-box">
             	<h2><%= isEdit ? "Update Koi Profile" : "Koi Profile Details" %></h2>
-            	<form action="saveKoi" method="POST" enctype="multipart/form-data" class="koi-form">
+            	<form action="saveKoi" method="POST" class="koi-form">
             	    <% if (isEdit) { %>
             	        <input type="hidden" name="id" value="<%= koiId %>">
             	    <% } %>
                 	<div class="form-group">
-                    	<label>Koi Image</label>
-                    	<input type="file" name="koi_image" accept="image/*" class="black-border-input">
-                    	<% if (isEdit) { %>
-                    	    <p style="font-size:0.85rem; color:#666; margin-top:4px;">Leave blank to keep current image.</p>
-                    	<% } %>
-                	</div>
-                
-                	<div class="form-group">
                     	<label>Koi Name</label>
-                    	<input type="text" name="name" placeholder="e.g., Sakura" value="<%= existingName %>" required>
+                    	<input type="text" name="name" placeholder="e.g., Sakura" value="<%= existingName %>" required <%= isEdit ? "readonly" : "" %>>
                 	</div>
 
                 	<div class="form-row">
                     	<div class="form-group">
                         	<label>Variety</label>
-                        	<input type="text" name="variety" placeholder="e.g., Kohaku" value="<%= existingVariety %>" required>
+                        	<input type="text" name="variety" placeholder="e.g., Kohaku" value="<%= existingVariety %>" required <%= isEdit ? "readonly" : "" %>>
                     	</div>
                     	<div class="form-group">
                         	<label>Breeder</label>
-                        	<input type="text" name="breeder" placeholder="e.g., Dainichi" value="<%= existingBreeder %>">
+                        	<input type="text" name="breeder" placeholder="e.g., Dainichi" value="<%= existingBreeder %>" <%= isEdit ? "readonly" : "" %>>
                     	</div>
                 	</div>
 
@@ -103,11 +97,14 @@
                     	</div>
                     	<div class="form-group">
                         	<label>Sex</label>
-                        	<select name="sex">
-                            	<option value="Male" <%= "Male".equals(existingSex) ? "selected" : "" %>>Male</option>
-                            	<option value="Female" <%= "Female".equals(existingSex) ? "selected" : "" %>>Female</option>
-                            	<option value="Unknown" <%= "Unknown".equals(existingSex) ? "selected" : "" %>>Unknown</option>
+                        	<select name="sex" <%= isEdit ? "disabled" : "" %>>
+                            	<option value="male" <%= "male".equals(existingSex) ? "selected" : "" %>>Male</option>
+                            	<option value="female" <%= "female".equals(existingSex) ? "selected" : "" %>>Female</option>
+                            	<option value="unknown" <%= "unknown".equals(existingSex) ? "selected" : "" %>>Unknown</option>
                         	</select>
+                        	<% if (isEdit) { %>
+                        	    <input type="hidden" name="sex" value="<%= existingSex %>">
+                        	<% } %>
                     	</div>
                 	</div>
 
@@ -115,33 +112,41 @@
                     	<label>Size (cm)</label>
                     	<input type="number" step="0.01" name="size_cm" value="<%= existingSize %>" required>
                 	</div>
+
+                	<div class="form-group">
+                    	<label>Status</label>
+                    	<select name="status" class="black-border-input">
+                        	<option value="healthy" <%= "healthy".equals(existingStatus) ? "selected" : "" %>>Healthy</option>
+                        	<option value="injured" <%= "injured".equals(existingStatus) ? "selected" : "" %>>Injured</option>
+                        	<option value="sick" <%= "sick".equals(existingStatus) ? "selected" : "" %>>Sick</option>
+                        	<option value="deceased" <%= "deceased".equals(existingStatus) ? "selected" : "" %>>Deceased</option>
+                    	</select>
+                	</div>
                 	
-                	<div class="form-row-koi">
-    					<div class="form-group-spaced">
-        					<label class="koi-label">Assigned Pond</label>
-        					<select name="pond_id" class="black-border-input">
-            					<option value="" <%= (existingPondId == -1) ? "selected" : "" %>>None</option>
-            					<%
-            					    Connection pondCon = null;
-            					    try {
-            					        pondCon = MysqlCon.getConnection();
-            					        Statement pondStmt = pondCon.createStatement();
-            					        ResultSet pondRs = pondStmt.executeQuery("SELECT id, name FROM ponds ORDER BY name");
-            					        while (pondRs.next()) {
-            					            int pid = pondRs.getInt("id");
-            					            String pname = pondRs.getString("name");
-            					%>
-            					<option value="<%= pid %>" <%= (existingPondId == pid) ? "selected" : "" %>><%= pname %></option>
-            					<%
-            					        }
-            					        pondRs.close();
-            					        pondStmt.close();
-            					    } catch (Exception e) { }
-            					    finally { if (pondCon != null) try { pondCon.close(); } catch (Exception e) {} }
-            					%>
-        					</select>
-    					</div>
-					</div>
+                	<div class="form-group">
+                    	<label>Assigned Pond</label>
+                    	<select name="pond_id">
+                        	<option value="" <%= (existingPondId == -1) ? "selected" : "" %>>None</option>
+                        	<%
+                        	    Connection pondCon = null;
+                        	    try {
+                        	        pondCon = MysqlCon.getConnection();
+                        	        Statement pondStmt = pondCon.createStatement();
+                        	        ResultSet pondRs = pondStmt.executeQuery("SELECT id, name FROM ponds ORDER BY name");
+                        	        while (pondRs.next()) {
+                        	            int pid = pondRs.getInt("id");
+                        	            String pname = pondRs.getString("name");
+                        	%>
+                        	<option value="<%= pid %>" <%= (existingPondId == pid) ? "selected" : "" %>><%= pname %></option>
+                        	<%
+                        	        }
+                        	        pondRs.close();
+                        	        pondStmt.close();
+                        	    } catch (Exception e) { }
+                        	    finally { if (pondCon != null) try { pondCon.close(); } catch (Exception e) {} }
+                        	%>
+                    	</select>
+                	</div>
 
                 	<div class="form-actions">
                     	<button type="submit" class="add-task-btn"><%= isEdit ? "Update Profile" : "Save Profile" %></button>
