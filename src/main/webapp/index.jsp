@@ -19,6 +19,7 @@
 <%
     java.sql.Connection con = null;
     int totalPonds = 0;
+    int totalKoi = 0;
 
     try {
         con = MysqlCon.getConnection();
@@ -32,6 +33,16 @@
         }
         countRs.close();
         countStmt.close();
+
+        // Get total koi count (excluding deceased)
+        PreparedStatement koiCountStmt = con.prepareStatement("SELECT COUNT(*) AS total FROM koi WHERE organization_id = ? AND status != 'deceased'");
+        koiCountStmt.setInt(1, (Integer) session.getAttribute("orgId"));
+        ResultSet koiCountRs = koiCountStmt.executeQuery();
+        if (koiCountRs.next()) {
+            totalKoi = koiCountRs.getInt("total");
+        }
+        koiCountRs.close();
+        koiCountStmt.close();
     } catch (Exception e) {
         // Connection failed 
     }
@@ -63,8 +74,8 @@
             </div>
             <div class="card">
                 <div class="card-label">Koi Inventory</div>
-                <div class="card-value">0</div>
-                <div class="card-sub">Coming soon</div>
+                <div class="card-value"><%= totalKoi %></div>
+                <div class="card-sub"><a href="koi.jsp">Manage koi</a></div>
             </div>
             <div class="card">
                 <div class="card-label">Water Quality</div>
