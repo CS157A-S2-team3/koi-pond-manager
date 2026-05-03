@@ -42,7 +42,7 @@ body {
 
 .koi-grid-centered {
     display: grid;
-    grid-template-columns: minmax(280px, 480px);
+    grid-template-columns: minmax(420px, 760px);
     justify-content: center;
     gap: 16px;
     width: 100%;
@@ -56,7 +56,7 @@ body {
     overflow: visible;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     transition: transform 0.2s;
-    padding: 16px 16px 14px 16px;
+    padding: 22px 22px 20px 22px;
     box-sizing: border-box;
 }
 
@@ -157,7 +157,7 @@ body {
     padding-top: 20px;
 }
 
-.red-form-box {
+.blue-form-box {
     background-color: #ffffff;
     color: #333;
     padding: 40px;
@@ -168,7 +168,7 @@ body {
     max-width: 600px;
 }
 
-.red-form-box h2 {
+.blue-form-box h2 {
     text-align: center;
     margin-top: 0;
     margin-bottom: 30px;
@@ -229,7 +229,7 @@ body {
     border-color: #357abd;
 }
 
-.red-form-box .cancel-link {
+.blue-form-box .cancel-link {
     color: var(--koi-blue);
     background-color: white;
     border: 2px solid var(--koi-blue);
@@ -239,7 +239,7 @@ body {
     font-weight: bold;
 }
 
-.red-form-box .cancel-link:hover {
+.blue-form-box .cancel-link:hover {
     background-color: var(--koi-blue);
     color: white;
 }

@@ -12,6 +12,7 @@
     String existingSize = "";
     String existingStatus = "healthy";
     int existingPondId = -1;
+    String existingNotes = "";
     
     if (koiIdParam != null && !koiIdParam.isEmpty()) {
         koiId = Integer.parseInt(koiIdParam);
@@ -33,6 +34,7 @@
                 existingStatus = rs.getString("status") != null ? rs.getString("status") : "healthy";
                 existingPondId = rs.getInt("pond_id");
                 if (rs.wasNull()) existingPondId = -1;
+                existingNotes = rs.getString("notes") != null ? rs.getString("notes") : "";
             }
             rs.close();
             ps.close();
@@ -68,7 +70,7 @@
 
     <main class="content-wrapper">
     	<div class="profile-centered-wrapper">
-        	<div class="red-form-box">
+        	<div class="blue-form-box">
             	<h2><%= isEdit ? "Update Koi Profile" : "Koi Profile Details" %></h2>
             	<form action="saveKoi" method="POST" class="koi-form">
             	    <% if (isEdit) { %>
@@ -146,6 +148,11 @@
                         	    finally { if (pondCon != null) try { pondCon.close(); } catch (Exception e) {} }
                         	%>
                     	</select>
+                	</div>
+
+                	<div class="form-group">
+                    	<label>Notes</label>
+                    	<textarea name="notes" rows="3" placeholder="e.g., Feeding notes, observations..." style="width:100%; padding:10px; border:1px solid #333; border-radius:4px; box-sizing:border-box; font-size:1rem; resize:vertical;"><%= existingNotes %></textarea>
                 	</div>
 
                 	<div class="form-actions">

@@ -1,5 +1,108 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.sql.*, com.koi.MysqlCon, java.text.SimpleDateFormat" %>
+
+<%!
+    // Java helper method: escapes special HTML characters
+    private String escapeHtml(String s) {
+        if (s == null) return "";
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+    }
+
+    // Java helper method: returns "N/A" if the string is null, otherwise returns the string
+    private String orNA(String s) {
+        return (s != null && !s.isEmpty()) ? s : "N/A";
+    }
+%>
+
+<%
+    // Check if a koi card was clicked (selectedId passed via URL)
+    String selectedIdParam = request.getParameter("selectedId");
+    int selectedId = -1;
+    if (selectedIdParam != null) {
+        try { selectedId = Integer.parseInt(selectedIdParam); } catch (NumberFormatException e) {}
+    }
+
+    // Variables to hold the selected koi's data for the modal
+    String modalName = "", modalVariety = "N/A", modalBreeder = "N/A", modalSex = "N/A";
+    String modalAge = "N/A", modalSize = "N/A", modalPond = "None", modalStatus = "N/A";
+    String modalDeceased = "";
+    String modalNotes = "";
+    String modalHistoryHtml = "<p class=\"koi-history-empty\">No pond transfers recorded.</p>";
+    boolean showModal = false;
+
+    if (selectedId > 0) {
+        java.sql.Connection modalCon = null;
+        try {
+            modalCon = MysqlCon.getConnection();
+
+            // Query the selected koi's details
+            PreparedStatement modalPs = modalCon.prepareStatement("SELECT * FROM koi WHERE id = ?");
+            modalPs.setInt(1, selectedId);
+            ResultSet modalRs = modalPs.executeQuery();
+
+            if (modalRs.next()) {
+                showModal = true;
+                modalName    = orNA(modalRs.getString("name"));
+                modalVariety = orNA(modalRs.getString("variety"));
+                modalBreeder = orNA(modalRs.getString("breeder"));
+                modalSex     = orNA(modalRs.getString("sex"));
+
+                int mAge = modalRs.getInt("age");       boolean mAgeNull  = modalRs.wasNull();
+                double mSize = modalRs.getDouble("size_cm"); boolean mSizeNull = modalRs.wasNull();
+                int mPondId  = modalRs.getInt("pond_id");    boolean mPondNull = modalRs.wasNull();
+
+                modalStatus = orNA(modalRs.getString("status"));
+                modalAge    = mAgeNull  ? "N/A" : String.valueOf(mAge);
+                modalSize   = mSizeNull ? "N/A" : String.format("%.2f", mSize) + " cm";
+                modalPond   = mPondNull ? "None" : String.valueOf(mPondId);
+
+                java.sql.Timestamp mUpdatedAt = modalRs.getTimestamp("updated_at");
+                SimpleDateFormat dtf = new SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a");
+                if ("deceased".equals(modalStatus) && mUpdatedAt != null) {
+                    modalDeceased = dtf.format(mUpdatedAt);
+                }
+
+                modalNotes = modalRs.getString("notes") != null ? modalRs.getString("notes") : "";
+
+                // Query and build the pond history table for the selected koi
+                PreparedStatement histPs = modalCon.prepareStatement(
+                    "SELECT kph.moved_at, " +
+                    "(SELECT p.name FROM ponds p WHERE p.id = kph.from_pond_id) AS from_name, " +
+                    "(SELECT p.name FROM ponds p WHERE p.id = kph.to_pond_id) AS to_name " +
+                    "FROM koi_pond_history kph " +
+                    "WHERE kph.koi_id = ? ORDER BY kph.moved_at ASC");
+                histPs.setInt(1, selectedId);
+                ResultSet histRs = histPs.executeQuery();
+                SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy HH:mm");
+                StringBuilder histRows = new StringBuilder();
+                boolean hasHistory = false;
+                while (histRs.next()) {
+                    hasHistory = true;
+                    String fromName = histRs.getString("from_name") != null ? histRs.getString("from_name") : "None";
+                    String toName   = histRs.getString("to_name")   != null ? histRs.getString("to_name")   : "None";
+                    String movedAt  = sdf.format(histRs.getTimestamp("moved_at"));
+                    histRows.append("<tr><td>").append(movedAt).append("</td>")
+                            .append("<td>").append(escapeHtml(fromName)).append("</td>")
+                            .append("<td>").append(escapeHtml(toName)).append("</td></tr>");
+                }
+                histRs.close();
+                histPs.close();
+                if (hasHistory) {
+                    modalHistoryHtml =
+                        "<table class=\"koi-history-table\">" +
+                        "<thead><tr><th>Date &amp; Time</th><th>From Pond</th><th>To Pond</th></tr></thead>" +
+                        "<tbody>" + histRows + "</tbody></table>";
+                }
+            }
+            modalRs.close();
+            modalPs.close();
+        } catch (Exception e) {
+            // modal load error is non-fatal
+        } finally {
+            if (modalCon != null) try { modalCon.close(); } catch (SQLException e) {}
+        }
+    }
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,9 +111,15 @@
     <link rel="stylesheet" type="text/css" href="css/style.css">
     <link rel="stylesheet" type="text/css" href="css/koi-inventory.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Show dropdown on hover — replaces the JavaScript toggleKoiMenu function */
+        .koi-dot-menu:hover .koi-dropdown-menu {
+            display: block;
+        }
+    </style>
 </head>
 <body>
- 
+
     <header>
         <h1>Koi Pond Manager</h1>
         <nav>
@@ -23,15 +132,15 @@
     </header>
 
     <main class="content-wrapper">
-    	<div class="container">
-        	<header class="inventory-header">
-            	<h2>Koi Inventory</h2>
-            	<a href="koiProfile.jsp" class="add-task-btn" style="text-decoration: none;">
-                	<i class="fa fa-plus"></i> Create New Koi Profile
-            	</a>
-        	</header>
+        <div class="container">
+            <header class="inventory-header">
+                <h2>Koi Inventory</h2>
+                <a href="koiProfile.jsp" class="add-task-btn" style="text-decoration: none; color: white;">
+                    <i class="fa fa-plus"></i> Create New Koi Profile
+                </a>
+            </header>
 
-        	<div class="koi-grid-centered">
+            <div class="koi-grid-centered">
                 <%
                     java.sql.Connection con = null;
                     try {
@@ -43,55 +152,20 @@
                         while (rs.next()) {
                             hasKoi = true;
                             int id = rs.getInt("id");
-                            String name = rs.getString("name");
+                            String name    = rs.getString("name");
                             String variety = rs.getString("variety");
                             String breeder = rs.getString("breeder");
-                            String sex = rs.getString("sex");
-                            int age = rs.getInt("age");
-                            boolean ageNull = rs.wasNull();
-                            double size = rs.getDouble("size_cm");
-                            boolean sizeNull = rs.wasNull();
-                            int pondId = rs.getInt("pond_id");
-                            boolean pondNull = rs.wasNull();
-                            String status = rs.getString("status");
-                            java.sql.Timestamp updatedAt = rs.getTimestamp("updated_at");
-                            SimpleDateFormat dtf = new SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a");
-                            String deceasedDisplay = ("deceased".equals(status) && updatedAt != null) ? dtf.format(updatedAt) : "";
-
-                            // Build pond history JSON for this koi
-                            StringBuilder histJson = new StringBuilder("[");
-                            try (PreparedStatement histPs = con.prepareStatement(
-                                    "SELECT kph.moved_at, " +
-                                    "COALESCE(pf.name, 'None') AS from_name, " +
-                                    "COALESCE(pt.name, 'None') AS to_name " +
-                                    "FROM koi_pond_history kph " +
-                                    "LEFT JOIN ponds pf ON kph.from_pond_id = pf.id " +
-                                    "LEFT JOIN ponds pt ON kph.to_pond_id  = pt.id " +
-                                    "WHERE kph.koi_id = ? ORDER BY kph.moved_at ASC")) {
-                                histPs.setInt(1, id);
-                                ResultSet histRs = histPs.executeQuery();
-                                SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy HH:mm");
-                                boolean firstHist = true;
-                                while (histRs.next()) {
-                                    if (!firstHist) histJson.append(",");
-                                    String fromName = histRs.getString("from_name").replace("'", "\\'").replace("\"", "&quot;");
-                                    String toName   = histRs.getString("to_name").replace("'", "\\'").replace("\"", "&quot;");
-                                    String movedAt  = sdf.format(histRs.getTimestamp("moved_at"));
-                                    histJson.append("{\"from\":\"").append(fromName)
-                                            .append("\",\"to\":\"").append(toName)
-                                            .append("\",\"date\":\"").append(movedAt).append("\"}");
-                                    firstHist = false;
-                                }
-                                histRs.close();
-                            }
-                            histJson.append("]");
-                            String historyData = histJson.toString();
+                            String sex     = rs.getString("sex");
+                            int age        = rs.getInt("age");       boolean ageNull  = rs.wasNull();
+                            double size    = rs.getDouble("size_cm"); boolean sizeNull = rs.wasNull();
+                            int pondId     = rs.getInt("pond_id");    boolean pondNull = rs.wasNull();
+                            String status  = rs.getString("status");
                 %>
-                    <div class="koi-card-horizontal" 
-                        data-history='<%= historyData %>'
-                        onclick="openKoiModal(this, '<%= name.replace("'", "\\'") %>', '<%= variety != null ? variety.replace("'", "\\'") : "N/A" %>', '<%= breeder != null ? breeder.replace("'", "\\'") : "N/A" %>', '<%= sex != null ? sex : "N/A" %>', '<%= ageNull ? "N/A" : age %>', '<%= sizeNull ? "N/A" : String.format("%.2f", size) + " cm" %>', '<%= pondNull ? "None" : pondId %>', '<%= status != null ? status : "N/A" %>', '<%= deceasedDisplay.replace("'", "\\'") %>')" style="cursor:pointer;">
-                        <div class="koi-dot-menu" onclick="event.stopPropagation();">
-                            <button class="dot-btn" onclick="toggleKoiMenu(event, this)">&#8942;</button>
+                    <%-- Clicking a card navigates to koi.jsp?selectedId=id, which Java uses to open the modal --%>
+                    <a href="koi.jsp?selectedId=<%= id %>" style="text-decoration: none; color: inherit;">
+                    <div class="koi-card-horizontal" style="cursor:pointer;">
+                        <div class="koi-dot-menu" onclick="event.preventDefault(); event.stopPropagation();">
+                            <button class="dot-btn">&#8942;</button>
                             <div class="koi-dropdown-menu">
                                 <form action="deleteKoi" method="POST" onsubmit="return confirm('Are you sure you want to delete this koi?');">
                                     <input type="hidden" name="id" value="<%= id %>">
@@ -101,13 +175,13 @@
                         </div>
                         <div class="koi-card-body">
                             <div class="koi-card-name">
-                                <h3><%= name %></h3>
+                                <h3><%= escapeHtml(name) %></h3>
                             </div>
                             <div class="koi-card-stats">
                                 <span><strong>Pond:</strong> <%= pondNull ? "None" : pondId %></span>
                                 <span>
                                     <strong>Status:</strong>
-                                    <span class="koi-status-text status-<%= status != null ? status : "healthy" %>"><%= status != null ? status : "N/A" %></span>
+                                    <span class="koi-status-text status-<%= status != null ? status : "healthy" %>"><%= orNA(status) %></span>
                                 </span>
                                 <span><strong>Size:</strong> <%= sizeNull ? "N/A" : String.format("%.2f", size) + " cm" %></span>
                             </div>
@@ -119,9 +193,10 @@
                             </div>
                         </div>
                     </div>
+                    </a>
                 <%
                         }
-                        
+
                         if (!hasKoi) {
                 %>
                     <div class="empty-state" style="text-align: center; padding: 50px; color: #666;">
@@ -138,92 +213,36 @@
                     }
                 %>
             </div>
-    	</div>
-	</main>
+        </div>
+    </main>
 
-    <!-- Koi Detail Modal -->
-    <div id="koiModal" class="koi-modal-overlay" onclick="closeKoiModal(event)">
-        <div class="koi-modal-content" onclick="event.stopPropagation()">
-            <span class="koi-modal-close" onclick="closeKoiModal()">&times;</span>
-            <h2 id="koiModalName"></h2>
+    <div id="koiModal" class="koi-modal-overlay" style="display: <%= showModal ? "flex" : "none" %>;">
+        <div class="koi-modal-content">
+            <a href="koi.jsp" class="koi-modal-close" style="text-decoration: none;">&times;</a>
+            <h2><%= escapeHtml(modalName) %></h2>
             <div class="koi-modal-details">
-                <p><strong>Variety:</strong> <span id="koiModalVariety"></span></p>
-                <p><strong>Breeder:</strong> <span id="koiModalBreeder"></span></p>
-                <p><strong>Sex:</strong> <span id="koiModalSex"></span></p>
-                <p><strong>Age:</strong> <span id="koiModalAge"></span></p>
-                <p><strong>Size:</strong> <span id="koiModalSize"></span></p>
-                <p><strong>Pond ID:</strong> <span id="koiModalPond"></span></p>
-                <p><strong>Status:</strong> <span id="koiModalStatus"></span></p>
-                <p id="koiModalDeceasedRow" style="display:none;"><strong>Date of Death:</strong> <span id="koiModalDeceased"></span></p>
+                <p><strong>Variety:</strong> <%= escapeHtml(modalVariety) %></p>
+                <p><strong>Breeder:</strong> <%= escapeHtml(modalBreeder) %></p>
+                <p><strong>Sex:</strong>     <%= escapeHtml(modalSex) %></p>
+                <p><strong>Age:</strong>     <%= modalAge %></p>
+                <p><strong>Size:</strong>    <%= modalSize %></p>
+                <p><strong>Pond ID:</strong> <%= modalPond %></p>
+                <p><strong>Status:</strong>  <%= modalStatus %></p>
+                <% if (!modalDeceased.isEmpty()) { %>
+                    <p><strong>Date of Death:</strong> <%= modalDeceased %></p>
+                <% } %>
+                <% if (!modalNotes.isEmpty()) { %>
+                    <p><strong>Notes:</strong> <%= escapeHtml(modalNotes) %></p>
+                <% } %>
             </div>
             <div class="koi-modal-history">
                 <h3>Pond Assignment History</h3>
-                <div id="koiModalHistoryBody"></div>
+                <%= modalHistoryHtml %>
             </div>
         </div>
     </div>
 
-    <script>
-        function openKoiModal(card, name, variety, breeder, sex, age, size, pond, status, deceased) {
-            document.getElementById('koiModalName').textContent = name;
-            document.getElementById('koiModalVariety').textContent = variety;
-            document.getElementById('koiModalBreeder').textContent = breeder;
-            document.getElementById('koiModalSex').textContent = sex;
-            document.getElementById('koiModalAge').textContent = age;
-            document.getElementById('koiModalSize').textContent = size;
-            document.getElementById('koiModalPond').textContent = pond;
-            document.getElementById('koiModalStatus').textContent = status;
-
-            // Show/hide Date of Death row
-            var deceasedRow = document.getElementById('koiModalDeceasedRow');
-            if (status === 'deceased' && deceased) {
-                document.getElementById('koiModalDeceased').textContent = deceased;
-                deceasedRow.style.display = 'block';
-            } else {
-                deceasedRow.style.display = 'none';
-            }
-
-            // Render pond assignment history
-            var historyBody = document.getElementById('koiModalHistoryBody');
-            var history = [];
-            try { history = JSON.parse(card.dataset.history || '[]'); } catch(e) {}
-
-            if (history.length === 0) {
-                historyBody.innerHTML = '<p class="koi-history-empty">No pond transfers recorded.</p>';
-            } else {
-                var rows = history.map(function(h) {
-                    return '<tr><td>' + h.date + '</td><td>' + h.from + '</td><td>' + h.to + '</td></tr>';
-                }).join('');
-                historyBody.innerHTML =
-                    '<table class="koi-history-table">' +
-                    '<thead><tr><th>Date &amp; Time</th><th>From Pond</th><th>To Pond</th></tr></thead>' +
-                    '<tbody>' + rows + '</tbody></table>';
-            }
-
-            document.getElementById('koiModal').style.display = 'flex';
-        }
-        function closeKoiModal(event) {
-            if (!event || event.target === document.getElementById('koiModal')) {
-                document.getElementById('koiModal').style.display = 'none';
-            }
-        }
-        function toggleKoiMenu(e, btn) {
-            e.stopPropagation();
-            document.querySelectorAll('.koi-dropdown-menu.show').forEach(function(menu) {
-                if (menu !== btn.nextElementSibling) menu.classList.remove('show');
-            });
-            btn.nextElementSibling.classList.toggle('show');
-        }
-        document.addEventListener('click', function(e) {
-            if (!e.target.classList.contains('dot-btn')) {
-                document.querySelectorAll('.koi-dropdown-menu.show').forEach(function(menu) {
-                    menu.classList.remove('show');
-                });
-            }
-        });
-    </script>
-	
-	<footer>
+    <footer>
         <p>&copy; 2026 Koi Pond Manager &mdash; CS157A Team 3</p>
     </footer>
 </body>

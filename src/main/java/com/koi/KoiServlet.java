@@ -39,6 +39,7 @@ public class KoiServlet extends HttpServlet {
 
         String pondIdRaw = request.getParameter("pond_id");
         Integer pondId = (pondIdRaw != null && !pondIdRaw.isEmpty()) ? Integer.parseInt(pondIdRaw) : null;
+        String notes = request.getParameter("notes");
 
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("orgId") == null) {
@@ -72,7 +73,7 @@ public class KoiServlet extends HttpServlet {
                     }
                 }
 
-                String sql = "UPDATE koi SET name=?, age=?, variety=?, breeder=?, sex=?, size_cm=?, status=?, pond_id=? WHERE id=?";
+                String sql = "UPDATE koi SET name=?, age=?, variety=?, breeder=?, sex=?, size_cm=?, status=?, pond_id=?, notes=? WHERE id=?";
                 try (PreparedStatement ps = con.prepareStatement(sql)) {
                     ps.setString(1, name);
                     if (age != null) ps.setInt(2, age); else ps.setNull(2, java.sql.Types.INTEGER);
@@ -82,7 +83,8 @@ public class KoiServlet extends HttpServlet {
                     if (sizeCm != null) ps.setDouble(6, sizeCm); else ps.setNull(6, java.sql.Types.DOUBLE);
                     ps.setString(7, status != null ? status : "healthy");
                     if (pondId != null) ps.setInt(8, pondId); else ps.setNull(8, java.sql.Types.INTEGER);
-                    ps.setInt(9, koiId);
+                    ps.setString(9, notes);
+                    ps.setInt(10, koiId);
                     ps.executeUpdate();
                 }
 
@@ -101,8 +103,8 @@ public class KoiServlet extends HttpServlet {
                 }
 
             } else {
-                String sql = "INSERT INTO koi (organization_id, name, age, variety, breeder, sex, size_cm, status, pond_id) "
-                           + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                String sql = "INSERT INTO koi (organization_id, name, age, variety, breeder, sex, size_cm, status, pond_id, notes) "
+                           + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 try (PreparedStatement ps = con.prepareStatement(sql)) {
                     ps.setInt(1, orgId);
                     ps.setString(2, name);
@@ -113,6 +115,7 @@ public class KoiServlet extends HttpServlet {
                     if (sizeCm != null) ps.setDouble(7, sizeCm); else ps.setNull(7, java.sql.Types.DOUBLE);
                     ps.setString(8, status != null ? status : "healthy");
                     if (pondId != null) ps.setInt(9, pondId); else ps.setNull(9, java.sql.Types.INTEGER);
+                    ps.setString(10, notes);
                     ps.executeUpdate();
                 }
             }

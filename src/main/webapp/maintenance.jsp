@@ -5,6 +5,8 @@
         response.sendRedirect("login.jsp");
         return;
     }
+
+    boolean showModal = "addSchedule".equals(request.getParameter("action"));
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -14,6 +16,12 @@
     <link rel="stylesheet" type="text/css" href="css/style.css">
     <link rel="stylesheet" type="text/css" href="css/maintenance-style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Show dropdown on hover — replaces the JavaScript toggleMenu function */
+        .three-dot-menu:hover .dropdown-menu {
+            display: block;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -30,9 +38,10 @@
     <main class="content-wrapper container">
         <header class="section-header-top">
             <h2>Maintenance & Feeding</h2>
-            <button class="add-task-btn" onclick="openModal()">
+            <%-- Clicking this link passes action=addSchedule, which Java uses to open the modal --%>
+            <a href="maintenance.jsp?action=addSchedule" class="add-task-btn" style="text-decoration: none; color: white;">
                 <i class="fa fa-plus"></i> Add Maintenance Schedule
-            </button>
+            </a>
         </header>
 
         <section class="maintenance-box">
@@ -58,7 +67,7 @@
                             String sql = "SELECT t.schedule_id, t.due_at, t.status, t.notes, s.freq " +
                                          "FROM MaintenanceTask t " +
                                          "JOIN MaintenanceSchedule s ON t.schedule_id = s.id " +
-                                         "WHERE s.user_id = ? AND t.status != 'Completed' " +
+                                         "WHERE s.user_id = ? AND t.status <> 'Completed' " +
                                          "ORDER BY t.due_at ASC";
                             PreparedStatement ps = con.prepareStatement(sql);
                             ps.setInt(1, (int) session.getAttribute("userId"));
@@ -77,7 +86,22 @@
                                 
                                 LocalDate due = dueDate.toLocalDate();
                                 boolean isOverdue = due.isBefore(today) && !"Completed".equals(status);
-                                String displayStatus = isOverdue ? "Overdue" : status;
+
+                                // Calculate missed occurrences based on frequency and days overdue
+                                int missedCount = 1;
+                                if (isOverdue) {
+                                    long daysDiff = java.time.temporal.ChronoUnit.DAYS.between(due, today);
+                                    int periodDays = 1; // default: Daily
+                                    if ("Weekly".equals(freq))    periodDays = 7;
+                                    else if ("Biweekly".equals(freq)) periodDays = 14;
+                                    else if ("Monthly".equals(freq))  periodDays = 30;
+                                    missedCount = (int) Math.ceil((double) daysDiff / periodDays);
+                                    if (missedCount < 1) missedCount = 1;
+                                }
+
+                                String displayStatus = isOverdue
+                                    ? (missedCount > 1 ? "Overdue (" + missedCount + ")" : "Overdue")
+                                    : status;
                                 String statusClass = isOverdue ? "overdue" : "pending";
                                 String rowClass = isOverdue ? "task-row urgent" : "task-row";
                     %>
@@ -95,7 +119,7 @@
                             </td>
                             <td class="menu-cell">
                                 <div class="three-dot-menu">
-                                    <button class="dot-btn" onclick="toggleMenu(this)">&#8942;</button>
+                                    <button class="dot-btn">&#8942;</button>
                                     <div class="dropdown-menu">
                                         <form action="deactivateSchedule" method="POST">
                                             <input type="hidden" name="schedule_id" value="<%= scheduleId %>">
@@ -134,9 +158,9 @@
         </section>
     </main>
 
-    <div id="maintenanceModal" class="modal">
+    <div id="maintenanceModal" class="modal" style="display: <%= showModal ? "flex" : "none" %>;">
         <div class="modal-content white-form-box">
-            <span class="close" onclick="closeModal()">&times;</span>
+            <a href="maintenance.jsp" class="close" style="text-decoration: none;">&times;</a>
             <h2>Create Recurring Schedule</h2>
             <form action="saveSchedule" method="POST" class="maintenance-form">
                 <div class="form-group">
@@ -160,34 +184,13 @@
                 </div>
                 <div class="form-actions">
                     <button type="submit">Save Schedule</button>
-                    <button type="button" class="cancel-link" onclick="closeModal()">Cancel</button>
+                    <%-- Cancel link: navigates back to maintenance.jsp, closing the modal --%>
+                    <a href="maintenance.jsp" class="cancel-link" style="text-decoration: none; padding: 12px 35px; font-size: 1.15rem; cursor: pointer;">Cancel</a>
                 </div>
             </form>
         </div>
     </div>
 
-    <script>
-        function openModal() { document.getElementById('maintenanceModal').style.display = 'flex'; }
-        function closeModal() { document.getElementById('maintenanceModal').style.display = 'none'; }
-        
-        function toggleMenu(btn) {
-            // Close all other open menus
-            document.querySelectorAll('.dropdown-menu.show').forEach(function(menu) {
-                if (menu !== btn.nextElementSibling) menu.classList.remove('show');
-            });
-            btn.nextElementSibling.classList.toggle('show');
-        }
-        
-        // Close menus when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.classList.contains('dot-btn')) {
-                document.querySelectorAll('.dropdown-menu.show').forEach(function(menu) {
-                    menu.classList.remove('show');
-                });
-            }
-        });
-    </script>
-    
     <footer>
         <p>&copy; 2026 Koi Pond Manager &mdash; CS157A Team 3</p>
     </footer>
