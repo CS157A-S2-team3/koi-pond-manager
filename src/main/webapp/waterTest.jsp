@@ -1,10 +1,101 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.sql.*" %>
 <%@ page import="com.koi.MysqlCon" %>
+<%@ page import="java.net.URLEncoder" %>
 <%
     if (session.getAttribute("userId") == null) {
         response.sendRedirect("login.jsp");
         return;
+    }
+
+    if ("POST".equalsIgnoreCase(request.getMethod())) {
+        Connection waterCon = null;
+        try {
+            int orgId = (Integer) session.getAttribute("orgId");
+            int userId = (Integer) session.getAttribute("userId");
+
+            int pondId;
+            double ph, temperature, ammonia, nitrite, nitrate;
+            String notes;
+            try {
+                pondId = Integer.parseInt(request.getParameter("pondId"));
+                ph = Double.parseDouble(request.getParameter("ph"));
+                temperature = Double.parseDouble(request.getParameter("temperature"));
+                ammonia = Double.parseDouble(request.getParameter("ammonia"));
+                nitrite = Double.parseDouble(request.getParameter("nitrite"));
+                nitrate = Double.parseDouble(request.getParameter("nitrate"));
+                notes = request.getParameter("notes");
+            } catch (NumberFormatException e) {
+                response.sendRedirect("waterTest.jsp?error=" + URLEncoder.encode("Please enter valid numeric values.", "UTF-8"));
+                return;
+            }
+
+            if (pondId <= 0) {
+                response.sendRedirect("waterTest.jsp?error=" + URLEncoder.encode("Please select a valid pond.", "UTF-8"));
+                return;
+            }
+            if (ph < 0 || ph > 14) {
+                response.sendRedirect("waterTest.jsp?error=" + URLEncoder.encode("pH must be between 0 and 14.", "UTF-8"));
+                return;
+            }
+            if (temperature < 32 || temperature > 120) {
+                response.sendRedirect("waterTest.jsp?error=" + URLEncoder.encode("Temperature must be between 32 and 120.", "UTF-8"));
+                return;
+            }
+            if (ammonia < 0 || nitrite < 0 || nitrate < 0) {
+                response.sendRedirect("waterTest.jsp?error=" + URLEncoder.encode("Ammonia, nitrite, and nitrate cannot be negative.", "UTF-8"));
+                return;
+            }
+
+            waterCon = MysqlCon.getConnection();
+
+            PreparedStatement verifyPs = waterCon.prepareStatement(
+                "SELECT id FROM ponds WHERE id = ? AND organization_id = ?");
+            verifyPs.setInt(1, pondId);
+            verifyPs.setInt(2, orgId);
+            ResultSet verifyRs = verifyPs.executeQuery();
+            boolean pondValid = verifyRs.next();
+            verifyRs.close();
+            verifyPs.close();
+            if (!pondValid) {
+                response.sendRedirect("waterTest.jsp?error=" + URLEncoder.encode("Invalid pond selection.", "UTF-8"));
+                return;
+            }
+
+            PreparedStatement ps = waterCon.prepareStatement(
+                "INSERT INTO water_tests (pond_id, user_id, ph, temperature, ammonia, nitrite, nitrate, notes) "
+              + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            ps.setInt(1, pondId);
+            ps.setInt(2, userId);
+            ps.setDouble(3, ph);
+            ps.setDouble(4, temperature);
+            ps.setDouble(5, ammonia);
+            ps.setDouble(6, nitrite);
+            ps.setDouble(7, nitrate);
+            ps.setString(8, notes);
+            ps.executeUpdate();
+            ps.close();
+
+            StringBuilder warning = new StringBuilder();
+            if (ph < 6.5 || ph > 8.5) warning.append("pH is outside the recommended range (6.5-8.5). ");
+            if (ammonia >= 0.25) warning.append("Ammonia is above the recommended threshold (< 0.25). ");
+            if (nitrite >= 0.25) warning.append("Nitrite is above the recommended threshold (< 0.25). ");
+            if (nitrate >= 40) warning.append("Nitrate is above the recommended threshold (< 40). ");
+            if (temperature < 50 || temperature > 85) warning.append("Temperature is outside the typical koi-safe range (50-85°F). ");
+
+            if (warning.length() > 0) {
+                response.sendRedirect("waterTest.jsp?success=1&warning=" + URLEncoder.encode(warning.toString(), "UTF-8"));
+            } else {
+                response.sendRedirect("waterTest.jsp?success=1");
+            }
+            return;
+
+        } catch (Exception e) {
+            response.sendRedirect("waterTest.jsp?error=" + URLEncoder.encode("Database error while saving water test.", "UTF-8"));
+            return;
+        } finally {
+            if (waterCon != null) try { waterCon.close(); } catch (Exception e) {}
+        }
     }
 %>
 <!DOCTYPE html>
@@ -530,7 +621,7 @@
                         Values outside the recommended range can still be recorded. This helps preserve accurate historical logs while also flagging readings that need follow-up.
                     </div>
 
-                    <form action="waterTest" method="post">
+                    <form action="waterTest.jsp" method="post">
                         <div class="form-section-title">Basic Info</div>
 
                         <div class="form-layout">
