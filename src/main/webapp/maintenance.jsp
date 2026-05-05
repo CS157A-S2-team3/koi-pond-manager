@@ -6,7 +6,114 @@
         return;
     }
 
-    boolean showModal = "addSchedule".equals(request.getParameter("action"));
+    int orgId = (Integer) session.getAttribute("orgId");
+    int userId = (Integer) session.getAttribute("userId");
+    String error = null;
+    String success = null;
+
+    String action = request.getParameter("action");
+    boolean showModal = "addSchedule".equals(action);
+
+    java.sql.Connection con = null;
+    try {
+        con = MysqlCon.getConnection();
+
+        if ("saveSchedule".equals(action)) {
+            String notes = request.getParameter("notes");
+            String freq = request.getParameter("freq");
+            String dueAt = request.getParameter("due_at");
+
+            PreparedStatement ps = con.prepareStatement(
+                "INSERT INTO MaintenanceSchedule (organization_id, notes, freq, user_id) VALUES (?, ?, ?, ?)",
+                Statement.RETURN_GENERATED_KEYS);
+            ps.setInt(1, orgId);
+            ps.setString(2, notes);
+            ps.setString(3, freq);
+            ps.setInt(4, userId);
+            ps.executeUpdate();
+            ResultSet keys = ps.getGeneratedKeys();
+            if (keys.next()) {
+                int scheduleId = keys.getInt(1);
+                PreparedStatement taskPs = con.prepareStatement(
+                    "INSERT INTO MaintenanceTask (schedule_id, due_at, status, notes) VALUES (?, ?, 'Pending', ?)");
+                taskPs.setInt(1, scheduleId);
+                taskPs.setDate(2, Date.valueOf(dueAt));
+                taskPs.setString(3, notes);
+                taskPs.executeUpdate();
+                taskPs.close();
+            }
+            keys.close();
+            ps.close();
+            success = "Schedule created.";
+
+        } else if ("completeTask".equals(action)) {
+            int scheduleId = Integer.parseInt(request.getParameter("schedule_id"));
+            String dueAt = request.getParameter("due_at");
+
+            PreparedStatement chk = con.prepareStatement(
+                "SELECT freq, notes FROM MaintenanceSchedule WHERE id = ? AND organization_id = ?");
+            chk.setInt(1, scheduleId);
+            chk.setInt(2, orgId);
+            ResultSet chkRs = chk.executeQuery();
+            if (!chkRs.next()) {
+                error = "Schedule not found.";
+            } else {
+                String freq = chkRs.getString("freq");
+                String taskNotes = chkRs.getString("notes");
+                chkRs.close();
+                chk.close();
+
+                PreparedStatement up = con.prepareStatement(
+                    "UPDATE MaintenanceTask SET status = 'Completed', completed_at = NOW(), completed_by_user_id = ? "
+                  + "WHERE schedule_id = ? AND due_at = ?");
+                up.setInt(1, userId);
+                up.setInt(2, scheduleId);
+                up.setDate(3, Date.valueOf(dueAt));
+                up.executeUpdate();
+                up.close();
+
+                LocalDate currentDue = LocalDate.parse(dueAt);
+                LocalDate nextDue;
+                switch (freq) {
+                    case "Daily":    nextDue = currentDue.plusDays(1); break;
+                    case "Weekly":   nextDue = currentDue.plusWeeks(1); break;
+                    case "Biweekly": nextDue = currentDue.plusWeeks(2); break;
+                    case "Monthly":  nextDue = currentDue.plusMonths(1); break;
+                    default:         nextDue = currentDue.plusWeeks(1);
+                }
+                PreparedStatement ins = con.prepareStatement(
+                    "INSERT INTO MaintenanceTask (schedule_id, due_at, status, notes) VALUES (?, ?, 'Pending', ?)");
+                ins.setInt(1, scheduleId);
+                ins.setDate(2, Date.valueOf(nextDue));
+                ins.setString(3, taskNotes);
+                ins.executeUpdate();
+                ins.close();
+                success = "Task completed.";
+            }
+
+        } else if ("deactivateSchedule".equals(action)) {
+            int scheduleId = Integer.parseInt(request.getParameter("schedule_id"));
+            PreparedStatement up = con.prepareStatement(
+                "UPDATE MaintenanceSchedule SET status = 'Inactive', completed_at = NOW() "
+              + "WHERE id = ? AND organization_id = ?");
+            up.setInt(1, scheduleId);
+            up.setInt(2, orgId);
+            int rows = up.executeUpdate();
+            up.close();
+            if (rows == 0) {
+                error = "Schedule not found.";
+            } else {
+                PreparedStatement del = con.prepareStatement(
+                    "DELETE FROM MaintenanceTask WHERE schedule_id = ? AND status = 'Pending'");
+                del.setInt(1, scheduleId);
+                del.executeUpdate();
+                del.close();
+                success = "Schedule deactivated.";
+            }
+        }
+    } catch (Exception e) {
+        error = e.getMessage();
+    }
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -44,6 +151,13 @@
             </a>
         </header>
 
+        <% if (error != null) { %>
+            <div class="alert alert-danger"><%= error %></div>
+        <% } %>
+        <% if (success != null) { %>
+            <div class="alert alert-success"><%= success %></div>
+        <% } %>
+
         <section class="maintenance-box">
             <h3>Active Tasks</h3>
             <p class="subtitle">Tasks generated from recurring schedules.</p>
@@ -61,16 +175,15 @@
                     </thead>
                     <tbody>
                     <%
-                        Connection con = null;
                         try {
-                            con = MysqlCon.getConnection();
+                            if (con == null || con.isClosed()) con = MysqlCon.getConnection();
                             String sql = "SELECT t.schedule_id, t.due_at, t.status, t.notes, s.freq " +
                                          "FROM MaintenanceTask t " +
                                          "JOIN MaintenanceSchedule s ON t.schedule_id = s.id " +
-                                         "WHERE s.user_id = ? AND t.status <> 'Completed' " +
+                                         "WHERE s.organization_id = ? AND t.status <> 'Completed' " +
                                          "ORDER BY t.due_at ASC";
                             PreparedStatement ps = con.prepareStatement(sql);
-                            ps.setInt(1, (int) session.getAttribute("userId"));
+                            ps.setInt(1, orgId);
                             ResultSet rs = ps.executeQuery();
                             
                             LocalDate today = LocalDate.now();
@@ -111,7 +224,8 @@
                             <td><%= dueDate %></td>
                             <td><span class="status-flag <%= statusClass %>"><%= displayStatus %></span></td>
                             <td>
-                                <form action="completeTask" method="POST" style="display:inline;">
+                                <form action="maintenance.jsp" method="POST" style="display:inline;">
+                                    <input type="hidden" name="action" value="completeTask">
                                     <input type="hidden" name="schedule_id" value="<%= scheduleId %>">
                                     <input type="hidden" name="due_at" value="<%= dueDate %>">
                                     <button type="submit" class="action-btn">Complete</button>
@@ -121,7 +235,8 @@
                                 <div class="three-dot-menu">
                                     <button class="dot-btn">&#8942;</button>
                                     <div class="dropdown-menu">
-                                        <form action="deactivateSchedule" method="POST">
+                                        <form action="maintenance.jsp" method="POST">
+                                            <input type="hidden" name="action" value="deactivateSchedule">
                                             <input type="hidden" name="schedule_id" value="<%= scheduleId %>">
                                             <button type="submit" class="dropdown-item deactivate-item">Deactivate</button>
                                         </form>
@@ -162,7 +277,8 @@
         <div class="modal-content white-form-box">
             <a href="maintenance.jsp" class="close" style="text-decoration: none;">&times;</a>
             <h2>Create Recurring Schedule</h2>
-            <form action="saveSchedule" method="POST" class="maintenance-form">
+            <form action="maintenance.jsp" method="POST" class="maintenance-form">
+                <input type="hidden" name="action" value="saveSchedule">
                 <div class="form-group">
                     <label>Task Name</label>
                     <input type="text" name="notes" placeholder="e.g., Filter Rinse" required>

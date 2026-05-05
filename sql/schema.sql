@@ -67,12 +67,14 @@ CREATE TABLE IF NOT EXISTS treatments (
 -- Table for recurring maintenance
 CREATE TABLE IF NOT EXISTS MaintenanceSchedule (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    organization_id INT NOT NULL,
     notes TEXT,
     status VARCHAR(20) DEFAULT 'Active',
     freq VARCHAR(50) NOT NULL, -- Daily, Weekly, Biweekly, Monthly
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP NULL,
     user_id INT NOT NULL,
+    FOREIGN KEY (organization_id) REFERENCES organizations(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
