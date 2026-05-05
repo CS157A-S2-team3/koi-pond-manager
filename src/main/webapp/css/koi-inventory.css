@@ -1,0 +1,410 @@
+:root {
+    --koi-blue: #4a90e2;
+    --koi-white: #ffffff;
+    --koi-gray: #f4f4f4;
+}
+
+body {
+    background-color: var(--koi-gray);
+    margin: 0;
+    padding: 0;
+}
+
+.content-wrapper {
+    padding-top: 25px; 
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.inventory-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    width: 100%;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.inventory-header h2 {
+    color: var(--koi-dark-blue);
+    margin: 0;
+}
+
+.koi-grid-centered {
+    display: grid;
+    grid-template-columns: minmax(420px, 760px);
+    justify-content: center;
+    gap: 16px;
+    width: 100%;
+}
+
+.koi-card-horizontal {
+    position: relative;
+    background: var(--koi-white);
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: visible;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: transform 0.2s;
+    padding: 22px 22px 20px 22px;
+    box-sizing: border-box;
+}
+
+.koi-card-horizontal:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* Card body: stacks name → stats → action vertically */
+.koi-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.koi-card-name {
+    padding-right: 36px; /* leave room for dot-menu */
+}
+
+.koi-card-name h3 {
+    margin: 0 0 10px 0;
+    color: var(--koi-dark-blue);
+    font-size: 1.05rem;
+}
+
+.koi-card-stats {
+    display: flex;
+    flex-direction: row;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.koi-card-stats span {
+    font-size: 0.88rem;
+    color: #555;
+    padding: 2px 0;
+}
+
+.koi-card-actions {
+    margin-top: 4px;
+}
+
+/* Status text colors */
+.koi-status-text {
+    font-weight: 600;
+    text-transform: capitalize;
+}
+.koi-status-text.status-healthy  { color: #28a745; }
+.koi-status-text.status-sick     { color: #e0b800; }
+.koi-status-text.status-injured  { color: #fd7e14; }
+.koi-status-text.status-deceased { color: #dc3545; }
+
+/* Health bar */
+.koi-health-bar-wrapper {
+    width: 100%;
+    height: 7px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    margin: 8px 0 10px 0;
+    overflow: hidden;
+}
+
+.koi-health-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.koi-health-bar.health-healthy  { width: 100%; background-color: #28a745; }
+.koi-health-bar.health-sick     { width: 50%;  background-color: #e0b800; }
+.koi-health-bar.health-injured  { width: 33%;  background-color: #fd7e14; }
+.koi-health-bar.health-deceased { width: 0%;   background-color: transparent; }
+
+.koi-details-left {
+    flex: 2;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.koi-info h3 {
+    margin: 0 0 10px 0;
+    color: var(--koi-dark-blue);
+}
+
+.koi-info p {
+    margin: 5px 0;
+    color: #555;
+    font-size: 0.95rem;
+}
+
+.profile-centered-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 20px;
+}
+
+.blue-form-box {
+    background-color: #ffffff;
+    color: #333;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    border: 1px solid #ddd;
+    width: 100%;
+    max-width: 600px;
+}
+
+.blue-form-box h2 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 30px;
+    color: var(--koi-blue);
+}
+
+.koi-form .form-group {
+    margin-bottom: 15px;
+}
+
+.koi-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #444;
+}
+
+.koi-form input[type="text"],
+.koi-form input[type="number"],
+.koi-form input[type="file"],
+.koi-form select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #333;
+    border-radius: 4px;
+    box-sizing: border-box;
+    background-color: #fff;
+}
+
+.koi-form .form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.koi-form .form-row .form-group {
+    flex: 1;
+}
+
+.koi-form .form-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.koi-form button[type="submit"] {
+    background-color: var(--koi-blue);
+    color: white;
+    border: 2px solid var(--koi-blue);
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.koi-form button[type="submit"]:hover {
+    background-color: #357abd;
+    border-color: #357abd;
+}
+
+.blue-form-box .cancel-link {
+    color: var(--koi-blue);
+    background-color: white;
+    border: 2px solid var(--koi-blue);
+    padding: 10px 20px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.blue-form-box .cancel-link:hover {
+    background-color: var(--koi-blue);
+    color: white;
+}
+
+.koi-form input[readonly],
+.koi-form select[disabled] {
+    background-color: #f0f0f0;
+    color: #888;
+    cursor: not-allowed;
+    border-color: #ccc;
+}
+
+.koi-modal-overlay {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.koi-modal-content {
+    background: #fff;
+    border-radius: 10px;
+    padding: 30px;
+    width: 90%;
+    max-width: 560px;
+    max-height: 85vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+
+.koi-modal-content h2 {
+    margin-top: 0;
+    color: var(--koi-blue);
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.koi-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 18px;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: #999;
+    line-height: 1;
+}
+
+.koi-modal-close:hover {
+    color: #333;
+}
+
+.koi-modal-details p {
+    margin: 10px 0;
+    font-size: 1rem;
+    color: #333;
+}
+
+/* Pond assignment history inside modal */
+.koi-modal-history {
+    margin-top: 20px;
+    border-top: 1px solid #eee;
+    padding-top: 14px;
+}
+
+.koi-modal-history h3 {
+    margin: 0 0 10px 0;
+    font-size: 0.95rem;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.koi-history-empty {
+    font-size: 0.88rem;
+    color: #999;
+    margin: 0;
+}
+
+.koi-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.koi-history-table thead tr {
+    background-color: #f4f4f4;
+}
+
+.koi-history-table th {
+    text-align: left;
+    padding: 6px 8px;
+    color: #555;
+    font-weight: 600;
+    border-bottom: 1px solid #ddd;
+}
+
+.koi-history-table td {
+    padding: 6px 8px;
+    color: #333;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.koi-history-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Koi three-dot menu */
+.koi-dot-menu {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: inline-block;
+}
+
+.koi-dot-menu .dot-btn {
+    background: none;
+    border: none;
+    font-size: 2.2rem;
+    cursor: pointer;
+    padding: 6px 10px;
+    line-height: 1;
+    color: #333;
+    border-radius: 4px;
+}
+
+.koi-dot-menu .dot-btn:hover {
+    background: #f0f0f0;
+}
+
+.koi-dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 200;
+    min-width: 120px;
+}
+
+.koi-dropdown-menu.show {
+    display: block;
+}
+
+.delete-item {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #dc3545;
+}
+
+.delete-item:hover {
+    background: #fde8e8;
+}

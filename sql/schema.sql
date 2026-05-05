@@ -64,6 +64,33 @@ CREATE TABLE IF NOT EXISTS treatments (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- Table for recurring maintenance
+CREATE TABLE IF NOT EXISTS MaintenanceSchedule (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    organization_id INT NOT NULL,
+    notes TEXT,
+    status VARCHAR(20) DEFAULT 'Active',
+    freq VARCHAR(50) NOT NULL, -- Daily, Weekly, Biweekly, Monthly
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP NULL,
+    user_id INT NOT NULL,
+    FOREIGN KEY (organization_id) REFERENCES organizations(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Table for generated maintenance tasks
+CREATE TABLE IF NOT EXISTS MaintenanceTask (
+    schedule_id INT NOT NULL,
+    due_at DATE NOT NULL,
+    status VARCHAR(20) DEFAULT 'Pending',
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP NULL,
+    completed_by_user_id INT,
+    PRIMARY KEY (schedule_id, due_at),
+    FOREIGN KEY (schedule_id) REFERENCES MaintenanceSchedule(id) ON DELETE CASCADE
+);
+
 -- Koi table
 CREATE TABLE IF NOT EXISTS koi (
     id INT AUTO_INCREMENT PRIMARY KEY,
