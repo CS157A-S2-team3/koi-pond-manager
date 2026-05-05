@@ -57,9 +57,7 @@ return;
 
 <body>
 
-<header>
-    <h1>Koi Pond Manager</h1>
-</header>
+<%@ include file="header.jsp" %>
 
 <main>
 

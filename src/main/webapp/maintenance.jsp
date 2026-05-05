@@ -131,16 +131,7 @@
     </style>
 </head>
 <body>
-    <header>
-        <h1>Koi Pond Manager</h1>
-        <nav>
-            <a href="index.jsp">Dashboard</a>
-            <a href="ponds.jsp">Ponds</a>
-            <a href="koi.jsp">Koi</a>
-            <a href="treatments.jsp">Treatments</a>
-            <a href="logs.jsp">Logs</a>
-        </nav>
-    </header>
+    <%@ include file="header.jsp" %>
 
     <main class="content-wrapper container">
         <header class="section-header-top">
