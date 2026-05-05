@@ -22,6 +22,7 @@
     int totalTasks = 0;
     int overdueTasks = 0;
     int totalKoi = 0;
+    int totalWaterTests = 0;
 
     try {
         con = MysqlCon.getConnection();
@@ -67,6 +68,19 @@
         }
         koiCountRs.close();
         koiCountStmt.close();
+
+        // Get total water test count (org-scoped via ponds join)
+        PreparedStatement waterCountStmt = con.prepareStatement(
+            "SELECT COUNT(*) AS total FROM water_tests w "
+          + "JOIN ponds p ON w.pond_id = p.id "
+          + "WHERE p.organization_id = ?");
+        waterCountStmt.setInt(1, (Integer) session.getAttribute("orgId"));
+        ResultSet waterCountRs = waterCountStmt.executeQuery();
+        if (waterCountRs.next()) {
+            totalWaterTests = waterCountRs.getInt("total");
+        }
+        waterCountRs.close();
+        waterCountStmt.close();
     } catch (Exception e) {
         // Connection failed 
     }
@@ -89,8 +103,8 @@
             </div>
             <div class="card">
                 <div class="card-label">Water Quality</div>
-                <div class="card-value">—</div>
-                <div class="card-sub">Coming soon</div>
+                <div class="card-value"><%= totalWaterTests %></div>
+                <div class="card-sub"><a href="waterTest.jsp">Log water test</a></div>
             </div>
             <div class="card">
                 <div class="card-label">Open Tasks</div>
