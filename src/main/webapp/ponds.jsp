@@ -140,7 +140,7 @@
 
                     if (rs.isBeforeFirst()) {
                         hasPonds = true;
-        --%>
+        %>
         <div class="pond-grid">
             <%
                         while (rs.next()) {
