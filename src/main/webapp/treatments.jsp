@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.sql.*" %>
 <%@ page import="com.koi.MysqlCon" %>
+
 <%
     if (session.getAttribute("userId") == null) {
         response.sendRedirect("login.jsp");
@@ -9,34 +10,30 @@
 %>
 
 <%
-    // Database connection
-    java.sql.Connection treatCon = null;
+    Connection treatCon = null;
     String error = request.getParameter("error");
     String success = null;
 
     try {
         treatCon = MysqlCon.getConnection();
 
-        // Handle form submissions
         String action = request.getParameter("action");
 
         if ("create".equals(action)) {
             int pondId = Integer.parseInt(request.getParameter("pondId"));
             int orgId = (Integer) session.getAttribute("orgId");
 
-            // Verify the pond belongs to the user's organization
-            PreparedStatement verifyPs = treatCon.prepareStatement("SELECT id FROM ponds WHERE id = ? AND organization_id = ?");
+            PreparedStatement verifyPs = treatCon.prepareStatement(
+                "SELECT id FROM ponds WHERE id = ? AND organization_id = ?"
+            );
             verifyPs.setInt(1, pondId);
             verifyPs.setInt(2, orgId);
+
             ResultSet verifyRs = verifyPs.executeQuery();
+
             if (!verifyRs.next()) {
-                verifyRs.close();
-                verifyPs.close();
                 error = "Invalid pond selection.";
             } else {
-                verifyRs.close();
-                verifyPs.close();
-
                 int userId = (Integer) session.getAttribute("userId");
                 String medication = request.getParameter("medication");
                 String purpose = request.getParameter("purpose");
@@ -50,6 +47,7 @@
                 String sql = "INSERT INTO treatments "
                         + "(pond_id, user_id, medication, purpose, dosage, dosage_unit, duration, pond_volume, notes, quarantine) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
                 PreparedStatement ps = treatCon.prepareStatement(sql);
                 ps.setInt(1, pondId);
                 ps.setInt(2, userId);
@@ -64,9 +62,10 @@
                 ps.executeUpdate();
                 ps.close();
 
-                // Quarantine updates pond status
                 if (quarantine) {
-                    PreparedStatement pondPs = treatCon.prepareStatement("UPDATE ponds SET is_quarantine = ? WHERE id = ? AND organization_id = ?");
+                    PreparedStatement pondPs = treatCon.prepareStatement(
+                        "UPDATE ponds SET is_quarantine = ? WHERE id = ? AND organization_id = ?"
+                    );
                     pondPs.setBoolean(1, true);
                     pondPs.setInt(2, pondId);
                     pondPs.setInt(3, orgId);
@@ -76,10 +75,15 @@
 
                 success = "Treatment created successfully.";
             }
+
+            verifyRs.close();
+            verifyPs.close();
         }
 
     } catch (Exception e) {
         error = e.getMessage();
+    } finally {
+        if (treatCon != null) try { treatCon.close(); } catch (SQLException e) {}
     }
 %>
 
@@ -265,32 +269,24 @@
             color: #1f2937;
         }
 
-        .info-panel p {
-            margin: 0;
-            font-size: 1rem;
-            color: #4b5563;
-            line-height: 1.65;
-        }
-
+        .info-panel p,
         .info-panel ul {
-            margin-top: 0.8rem;
-            padding-left: 1.1rem;
             color: #4b5563;
             line-height: 1.6;
         }
 
-        .modal-overlay {
+        #treatmentModal.modal-overlay {
             display: none;
             position: fixed;
             inset: 0;
             background: rgba(0, 0, 0, 0.45);
             justify-content: center;
             align-items: center;
-            z-index: 1000;
+            z-index: 9999;
             padding: 1.5rem;
         }
 
-        .modal-box {
+        #treatmentModal .modal-box {
             background: white;
             width: 100%;
             max-width: 760px;
@@ -302,28 +298,28 @@
             overflow-y: auto;
         }
 
-        .modal-header {
+        #treatmentModal .modal-header {
             margin-bottom: 1.5rem;
         }
 
-        .modal-header h2 {
+        #treatmentModal .modal-header h2 {
             margin: 0 0 0.6rem 0;
             color: #1d4ed8;
             font-size: 1.85rem;
         }
 
-        .modal-sub {
+        #treatmentModal .modal-sub {
             color: #6c757d;
             line-height: 1.6;
         }
 
-        .modal-divider {
+        #treatmentModal .modal-divider {
             border: none;
             border-top: 2px solid #e5eefb;
             margin: 1rem 0 0 0;
         }
 
-        .form-section-title {
+        #treatmentModal .form-section-title {
             font-size: 0.92rem;
             font-weight: 800;
             color: #374151;
@@ -332,17 +328,18 @@
             margin: 1.2rem 0 0.85rem;
         }
 
-        .form-grid {
+        #treatmentModal .form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1rem 1.25rem;
+            align-items: start;
         }
 
-        .full-width {
+        #treatmentModal .full-width {
             grid-column: 1 / -1;
         }
 
-        .form-group label {
+        #treatmentModal .form-group label {
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -352,7 +349,7 @@
             color: #374151;
         }
 
-        .field-badge {
+        #treatmentModal .field-badge {
             font-size: 0.7rem;
             font-weight: 700;
             padding: 0.2rem 0.5rem;
@@ -360,24 +357,19 @@
             text-transform: uppercase;
         }
 
-        .badge-blue {
+        #treatmentModal .badge-blue {
             background: #dbeafe;
             color: #1d4ed8;
         }
 
-        .badge-green {
+        #treatmentModal .badge-green {
             background: #dcfce7;
             color: #166534;
         }
 
-        .badge-red {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .form-group input,
-        .form-group textarea,
-        .form-group select {
+        #treatmentModal input,
+        #treatmentModal textarea,
+        #treatmentModal select {
             width: 100%;
             padding: 0.85rem 0.95rem;
             border: 1px solid #cfd8e3;
@@ -387,20 +379,20 @@
             box-sizing: border-box;
         }
 
-        .form-group input:focus,
-        .form-group textarea:focus,
-        .form-group select:focus {
+        #treatmentModal input:focus,
+        #treatmentModal textarea:focus,
+        #treatmentModal select:focus {
             outline: none;
             border-color: #60a5fa;
             box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.12);
         }
 
-        .form-group textarea {
-            min-height: 120px;
+        #treatmentModal textarea {
+            min-height: 100px;
             resize: vertical;
         }
 
-        .help-text {
+        #treatmentModal .help-text {
             display: block;
             margin-top: 0.35rem;
             color: #6c757d;
@@ -408,7 +400,7 @@
             line-height: 1.5;
         }
 
-        .calc-box {
+        #treatmentModal .calc-box {
             background: #eff6ff;
             border: 1px solid #bfdbfe;
             border-radius: 10px;
@@ -416,61 +408,66 @@
             margin-top: 0.3rem;
         }
 
-        .calc-box strong {
+        #treatmentModal .calc-box strong {
             color: #1d4ed8;
         }
 
-        .checkbox-box {
+        #treatmentModal .checkbox-box {
             border: 1px solid #f1d0d0;
             background: #fff8f8;
             border-radius: 10px;
             padding: 1rem;
         }
 
-        .checkbox-row {
+        #treatmentModal .checkbox-row {
             display: flex;
             align-items: flex-start;
             gap: 0.7rem;
         }
 
-        .checkbox-row input[type="checkbox"] {
+        #treatmentModal .checkbox-row input[type="checkbox"] {
             width: auto;
             margin-top: 0.2rem;
         }
 
-        .modal-actions {
+        #treatmentModal .modal-actions {
             margin-top: 1.5rem;
             display: flex;
             justify-content: center;
+            align-items: center;
             gap: 1rem;
             flex-wrap: wrap;
+            width: 100%;
         }
 
-        .save-btn,
-        .cancel-btn {
+        #treatmentModal .save-btn,
+        #treatmentModal .cancel-btn {
             border: none;
             border-radius: 10px;
             padding: 0.78rem 1.15rem;
             font: inherit;
             font-weight: 700;
             cursor: pointer;
+            height: auto;
+            width: auto;
+            min-width: 130px;
         }
 
-        .save-btn {
+        #treatmentModal .save-btn {
             background: #1d4ed8;
             color: white;
         }
 
-        .save-btn:hover {
+        #treatmentModal .save-btn:hover {
             background: #1e40af;
         }
 
-        .cancel-btn {
+        #treatmentModal .cancel-btn {
             background: #e9ecef;
             color: #212529;
         }
 
-        .cancel-btn:hover {
+        #treatmentModal .cancel-btn:hover {
             background: #dfe3e6;
         }
 
@@ -481,7 +478,7 @@
         }
 
         @media (max-width: 760px) {
-            .form-grid {
+            #treatmentModal .form-grid {
                 grid-template-columns: 1fr;
             }
 
@@ -491,6 +488,7 @@
         }
     </style>
 </head>
+
 <body>
     <header>
         <h1>Koi Pond Manager</h1>
@@ -521,18 +519,13 @@
                 Record treatment details, calculate dosage from pond volume, store treatment history, and support quarantine workflows.
             </p>
 
-            <%
-                if (success != null) {
-            %>
+            <% if (success != null) { %>
                 <div class="alert-box alert-success"><%= success %></div>
-            <%
-                }
-                if (error != null && !error.trim().isEmpty()) {
-            %>
+            <% } %>
+
+            <% if (error != null && !error.trim().isEmpty()) { %>
                 <div class="alert-box alert-error"><%= error %></div>
-            <%
-                }
-            %>
+            <% } %>
 
             <div class="content-card">
                 <h3>Treatment Records</h3>
@@ -551,15 +544,16 @@
                                 <th>Action</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             <%
                                 Connection con = null;
-                                Statement stmt = null;
                                 ResultSet rs = null;
                                 boolean hasRows = false;
 
                                 try {
                                     con = MysqlCon.getConnection();
+
                                     PreparedStatement pStmt = con.prepareStatement(
                                         "SELECT t.*, p.name AS pond_name " +
                                         "FROM treatments t " +
@@ -567,50 +561,53 @@
                                         "WHERE p.organization_id = ? " +
                                         "ORDER BY t.created_at DESC"
                                     );
+
                                     pStmt.setInt(1, (Integer) session.getAttribute("orgId"));
                                     rs = pStmt.executeQuery();
 
                                     while (rs.next()) {
                                         hasRows = true;
                             %>
-                            <tr>
-                                <td><%= rs.getString("medication") %></td>
-                                <td><%= rs.getString("pond_name") != null ? rs.getString("pond_name") : ("Pond " + rs.getInt("pond_id")) %></td>
-                                <td><%= rs.getDouble("dosage") %> <%= rs.getString("dosage_unit") %></td>
-                                <td><%= rs.getInt("duration") %> days</td>
-                                <td><%= rs.getString("purpose") %></td>
-                                <td>
-                                    <span class="status-tag <%= rs.getBoolean("quarantine") ? "status-quarantine" : "status-active" %>">
-                                        <%= rs.getBoolean("quarantine") ? "Quarantine" : "Active" %>
-                                    </span>
-                                </td>
-                                <td>
-                                    <a href="treatmentDetails.jsp?id=<%= rs.getInt("id") %>" class="table-btn">View</a>
-                                </td>
-                            </tr>
+                                <tr>
+                                    <td><%= rs.getString("medication") %></td>
+                                    <td><%= rs.getString("pond_name") != null ? rs.getString("pond_name") : ("Pond " + rs.getInt("pond_id")) %></td>
+                                    <td><%= rs.getDouble("dosage") %> <%= rs.getString("dosage_unit") %></td>
+                                    <td><%= rs.getInt("duration") %> days</td>
+                                    <td><%= rs.getString("purpose") %></td>
+                                    <td>
+                                        <span class="status-tag <%= rs.getBoolean("quarantine") ? "status-quarantine" : "status-active" %>">
+                                            <%= rs.getBoolean("quarantine") ? "Quarantine" : "Active" %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="treatmentDetails.jsp?id=<%= rs.getInt("id") %>" class="table-btn">View</a>
+                                    </td>
+                                </tr>
                             <%
                                     }
 
                                     if (!hasRows) {
                             %>
-                            <tr>
-                                <td colspan="7" style="text-align:center; color:#6c757d;">
-                                    No treatment records yet. Click <strong>+ Add Treatment</strong> to create your first one.
-                                </td>
-                            </tr>
+                                <tr>
+                                    <td colspan="7" style="text-align:center; color:#6c757d;">
+                                        No treatment records yet. Click <strong>+ Add Treatment</strong> to create your first one.
+                                    </td>
+                                </tr>
                             <%
                                     }
+
+                                    pStmt.close();
+
                                 } catch (Exception e) {
                             %>
-                            <tr>
-                                <td colspan="7" style="color:#842029;">
-                                    Error loading treatments: <%= e.getMessage() %>
-                                </td>
-                            </tr>
+                                <tr>
+                                    <td colspan="7" style="color:#842029;">
+                                        Error loading treatments: <%= e.getMessage() %>
+                                    </td>
+                                </tr>
                             <%
                                 } finally {
                                     if (rs != null) try { rs.close(); } catch (SQLException e) {}
-                                    if (stmt != null) try { stmt.close(); } catch (SQLException e) {}
                                     if (con != null) try { con.close(); } catch (SQLException e) {}
                                 }
                             %>
@@ -656,47 +653,49 @@
 
             <form action="treatments.jsp" method="post">
                 <input type="hidden" name="action" value="create">
+
                 <div class="form-section-title">Basic Info</div>
 
                 <div class="form-grid">
-                    <div class="form-group">
+                    <div class="form-group full-width">
                         <label for="pondId">Pond</label>
                         <select id="pondId" name="pondId" required>
                             <option value="">Select a pond</option>
+
                             <%
                                 Connection pondCon = null;
-                                Statement pondStmt = null;
                                 ResultSet pondRs = null;
 
                                 try {
                                     pondCon = MysqlCon.getConnection();
-                                    PreparedStatement pondPStmt = pondCon.prepareStatement("SELECT id, name FROM ponds WHERE organization_id = ? ORDER BY name");
-                                    pondPStmt.setInt(1, (Integer) session.getAttribute("orgId"));
-                                    pondRs = pondPStmt.executeQuery();
+
+                                    PreparedStatement pondPs = pondCon.prepareStatement(
+                                        "SELECT id, name FROM ponds WHERE organization_id = ? ORDER BY name"
+                                    );
+
+                                    pondPs.setInt(1, (Integer) session.getAttribute("orgId"));
+                                    pondRs = pondPs.executeQuery();
 
                                     while (pondRs.next()) {
                             %>
                                 <option value="<%= pondRs.getInt("id") %>">
-                                    <%= pondRs.getString("name") %> (ID: <%= pondRs.getInt("id") %>)
+                                    <%= pondRs.getString("name") %>
                                 </option>
                             <%
                                     }
+
+                                    pondPs.close();
+
                                 } catch (Exception e) {
                             %>
                                 <option value="">Unable to load ponds</option>
                             <%
                                 } finally {
                                     if (pondRs != null) try { pondRs.close(); } catch (SQLException e) {}
-                                    if (pondStmt != null) try { pondStmt.close(); } catch (SQLException e) {}
                                     if (pondCon != null) try { pondCon.close(); } catch (SQLException e) {}
                                 }
                             %>
                         </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="userId">Recorded By User ID</label>
-                        <input type="number" id="userId" name="userId" min="1" placeholder="e.g. 2" required>
                     </div>
                 </div>
 
@@ -760,8 +759,6 @@
                             <option value="kg">Kilograms</option>
                             <option value="g">Grams</option>
                             <option value="ml">Milliliters</option>
-                            <option value="tbsp">Tablespoons</option>
-                            <option value="tsp">Teaspoons</option>
                         </select>
                     </div>
 
@@ -842,6 +839,7 @@
 
         window.onclick = function(event) {
             const modal = document.getElementById("treatmentModal");
+
             if (event.target === modal) {
                 closeModal();
             }

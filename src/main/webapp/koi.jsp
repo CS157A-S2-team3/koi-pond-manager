@@ -1,122 +1,248 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="java.sql.*, com.koi.MysqlCon, java.text.SimpleDateFormat" %>
-
-<%!
-    // Java helper method: escapes special HTML characters
-    private String escapeHtml(String s) {
-        if (s == null) return "";
-        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
-    }
-
-    // Java helper method: returns "N/A" if the string is null, otherwise returns the string
-    private String orNA(String s) {
-        return (s != null && !s.isEmpty()) ? s : "N/A";
+<%@ page import="java.sql.*, java.util.*, com.koi.MysqlCon" %>
+<%
+    if (session.getAttribute("userId") == null) {
+        response.sendRedirect("login.jsp");
+        return;
     }
 %>
 
 <%
-    // Check if a koi card was clicked (selectedId passed via URL)
-    String selectedIdParam = request.getParameter("selectedId");
-    int selectedId = -1;
-    if (selectedIdParam != null) {
-        try { selectedId = Integer.parseInt(selectedIdParam); } catch (NumberFormatException e) {}
-    }
+    java.sql.Connection con = null;
+    String error = null;
+    String success = null;
+    int orgId = (Integer) session.getAttribute("orgId");
+    int userId = (Integer) session.getAttribute("userId");
 
-    // Variables to hold the selected koi's data for the modal
-    String modalName = "", modalVariety = "N/A", modalBreeder = "N/A", modalSex = "N/A";
-    String modalAge = "N/A", modalSize = "N/A", modalPond = "None", modalStatus = "N/A";
-    String modalDeceased = "";
-    String modalNotes = "";
-    String modalHistoryHtml = "<p class=\"koi-history-empty\">No pond transfers recorded.</p>";
-    boolean showModal = false;
+    try {
+        con = MysqlCon.getConnection();
 
-    if (selectedId > 0) {
-        java.sql.Connection modalCon = null;
-        try {
-            modalCon = MysqlCon.getConnection();
+        String action = request.getParameter("action");
 
-            // Query the selected koi's details
-            PreparedStatement modalPs = modalCon.prepareStatement("SELECT * FROM koi WHERE id = ?");
-            modalPs.setInt(1, selectedId);
-            ResultSet modalRs = modalPs.executeQuery();
+        if ("create".equals(action)) {
+            String pondIdStr = request.getParameter("pondId");
+            Integer pondId = (pondIdStr != null && !pondIdStr.isEmpty()) ? Integer.parseInt(pondIdStr) : null;
 
-            if (modalRs.next()) {
-                showModal = true;
-                modalName    = orNA(modalRs.getString("name"));
-                modalVariety = orNA(modalRs.getString("variety"));
-                modalBreeder = orNA(modalRs.getString("breeder"));
-                modalSex     = orNA(modalRs.getString("sex"));
-
-                int mAge = modalRs.getInt("age");       boolean mAgeNull  = modalRs.wasNull();
-                double mSize = modalRs.getDouble("size_cm"); boolean mSizeNull = modalRs.wasNull();
-                int mPondId  = modalRs.getInt("pond_id");    boolean mPondNull = modalRs.wasNull();
-
-                modalStatus = orNA(modalRs.getString("status"));
-                modalAge    = mAgeNull  ? "N/A" : String.valueOf(mAge);
-                modalSize   = mSizeNull ? "N/A" : String.format("%.2f", mSize) + " cm";
-                modalPond   = mPondNull ? "None" : String.valueOf(mPondId);
-
-                java.sql.Timestamp mUpdatedAt = modalRs.getTimestamp("updated_at");
-                SimpleDateFormat dtf = new SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a");
-                if ("deceased".equals(modalStatus) && mUpdatedAt != null) {
-                    modalDeceased = dtf.format(mUpdatedAt);
-                }
-
-                modalNotes = modalRs.getString("notes") != null ? modalRs.getString("notes") : "";
-
-                // Query and build the pond history table for the selected koi
-                PreparedStatement histPs = modalCon.prepareStatement(
-                    "SELECT kph.moved_at, " +
-                    "(SELECT p.name FROM ponds p WHERE p.id = kph.from_pond_id) AS from_name, " +
-                    "(SELECT p.name FROM ponds p WHERE p.id = kph.to_pond_id) AS to_name " +
-                    "FROM koi_pond_history kph " +
-                    "WHERE kph.koi_id = ? ORDER BY kph.moved_at ASC");
-                histPs.setInt(1, selectedId);
-                ResultSet histRs = histPs.executeQuery();
-                SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy HH:mm");
-                StringBuilder histRows = new StringBuilder();
-                boolean hasHistory = false;
-                while (histRs.next()) {
-                    hasHistory = true;
-                    String fromName = histRs.getString("from_name") != null ? histRs.getString("from_name") : "None";
-                    String toName   = histRs.getString("to_name")   != null ? histRs.getString("to_name")   : "None";
-                    String movedAt  = sdf.format(histRs.getTimestamp("moved_at"));
-                    histRows.append("<tr><td>").append(movedAt).append("</td>")
-                            .append("<td>").append(escapeHtml(fromName)).append("</td>")
-                            .append("<td>").append(escapeHtml(toName)).append("</td></tr>");
-                }
-                histRs.close();
-                histPs.close();
-                if (hasHistory) {
-                    modalHistoryHtml =
-                        "<table class=\"koi-history-table\">" +
-                        "<thead><tr><th>Date &amp; Time</th><th>From Pond</th><th>To Pond</th></tr></thead>" +
-                        "<tbody>" + histRows + "</tbody></table>";
+            if (pondId != null) {
+                PreparedStatement verifyPs = con.prepareStatement("SELECT id FROM ponds WHERE id = ? AND organization_id = ?");
+                verifyPs.setInt(1, pondId);
+                verifyPs.setInt(2, orgId);
+                ResultSet verifyRs = verifyPs.executeQuery();
+                if (!verifyRs.next()) {
+                    verifyRs.close();
+                    verifyPs.close();
+                    error = "Invalid pond selection.";
+                    pondId = null;
+                } else {
+                    verifyRs.close();
+                    verifyPs.close();
                 }
             }
-            modalRs.close();
-            modalPs.close();
-        } catch (Exception e) {
-            // modal load error is non-fatal
-        } finally {
-            if (modalCon != null) try { modalCon.close(); } catch (SQLException e) {}
+
+            if (error == null) {
+                String sql = "INSERT INTO koi (organization_id, name, age, variety, breeder, sex, size_cm, status, pond_id, notes) "
+                           + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                ps.setInt(1, orgId);
+                ps.setString(2, request.getParameter("name"));
+
+                String ageStr = request.getParameter("age");
+                if (ageStr != null && !ageStr.isEmpty()) ps.setInt(3, Integer.parseInt(ageStr));
+                else ps.setNull(3, Types.INTEGER);
+
+                ps.setString(4, request.getParameter("variety"));
+                ps.setString(5, request.getParameter("breeder"));
+                ps.setString(6, request.getParameter("sex"));
+
+                String sizeStr = request.getParameter("sizeCm");
+                if (sizeStr != null && !sizeStr.isEmpty()) ps.setDouble(7, Double.parseDouble(sizeStr));
+                else ps.setNull(7, Types.DOUBLE);
+
+                ps.setString(8, request.getParameter("status"));
+
+                if (pondId != null) ps.setInt(9, pondId);
+                else ps.setNull(9, Types.INTEGER);
+
+                ps.setString(10, request.getParameter("notes"));
+                ps.executeUpdate();
+
+                ResultSet keys = ps.getGeneratedKeys();
+                int newKoiId = 0;
+                if (keys.next()) newKoiId = keys.getInt(1);
+                keys.close();
+                ps.close();
+
+                if (pondId != null && newKoiId > 0) {
+                    PreparedStatement histPs = con.prepareStatement(
+                        "INSERT INTO koi_pond_history (koi_id, from_pond_id, to_pond_id, moved_by) VALUES (?, NULL, ?, ?)");
+                    histPs.setInt(1, newKoiId);
+                    histPs.setInt(2, pondId);
+                    histPs.setInt(3, userId);
+                    histPs.executeUpdate();
+                    histPs.close();
+                }
+
+                success = "Koi created successfully.";
+            }
+
+        } else if ("update".equals(action)) {
+            int koiId = Integer.parseInt(request.getParameter("id"));
+            String pondIdStr = request.getParameter("pondId");
+            Integer newPondId = (pondIdStr != null && !pondIdStr.isEmpty()) ? Integer.parseInt(pondIdStr) : null;
+
+            PreparedStatement lookupPs = con.prepareStatement("SELECT pond_id FROM koi WHERE id = ? AND organization_id = ?");
+            lookupPs.setInt(1, koiId);
+            lookupPs.setInt(2, orgId);
+            ResultSet lookupRs = lookupPs.executeQuery();
+
+            if (!lookupRs.next()) {
+                error = "Koi not found.";
+            } else {
+                Integer oldPondId = lookupRs.getObject("pond_id") != null ? lookupRs.getInt("pond_id") : null;
+                lookupRs.close();
+                lookupPs.close();
+
+                if (newPondId != null) {
+                    PreparedStatement verifyPs = con.prepareStatement("SELECT id FROM ponds WHERE id = ? AND organization_id = ?");
+                    verifyPs.setInt(1, newPondId);
+                    verifyPs.setInt(2, orgId);
+                    ResultSet verifyRs = verifyPs.executeQuery();
+                    if (!verifyRs.next()) {
+                        error = "Invalid pond selection.";
+                    }
+                    verifyRs.close();
+                    verifyPs.close();
+                }
+
+                boolean transferAttempted = (oldPondId == null && newPondId != null)
+                    || (oldPondId != null && !oldPondId.equals(newPondId));
+
+                if (error == null && transferAttempted) {
+                    PreparedStatement quarantinePs = con.prepareStatement(
+                        "SELECT name FROM ponds WHERE id = ? AND is_quarantine = 1"
+                    );
+
+                    if (newPondId != null) {
+                        quarantinePs.setInt(1, newPondId);
+                        ResultSet quarantineRs = quarantinePs.executeQuery();
+
+                        if (quarantineRs.next()) {
+                            error = "Transfer blocked: " + quarantineRs.getString("name") + " is marked as quarantine.";
+                        }
+
+                        quarantineRs.close();
+                    }
+
+                    if (error == null && oldPondId != null) {
+                        quarantinePs.setInt(1, oldPondId);
+                        ResultSet quarantineRs = quarantinePs.executeQuery();
+
+                        if (quarantineRs.next()) {
+                            error = "Transfer blocked: " + quarantineRs.getString("name") + " is marked as quarantine.";
+                        }
+
+                        quarantineRs.close();
+                    }
+
+                    quarantinePs.close();
+                }
+
+                if (error == null) {
+                    String sql = "UPDATE koi SET name=?, age=?, variety=?, breeder=?, sex=?, size_cm=?, status=?, pond_id=?, notes=? "
+                               + "WHERE id=? AND organization_id=?";
+                    PreparedStatement ps = con.prepareStatement(sql);
+                    ps.setString(1, request.getParameter("name"));
+
+                    String ageStr = request.getParameter("age");
+                    if (ageStr != null && !ageStr.isEmpty()) ps.setInt(2, Integer.parseInt(ageStr));
+                    else ps.setNull(2, Types.INTEGER);
+
+                    ps.setString(3, request.getParameter("variety"));
+                    ps.setString(4, request.getParameter("breeder"));
+                    ps.setString(5, request.getParameter("sex"));
+
+                    String sizeStr = request.getParameter("sizeCm");
+                    if (sizeStr != null && !sizeStr.isEmpty()) ps.setDouble(6, Double.parseDouble(sizeStr));
+                    else ps.setNull(6, Types.DOUBLE);
+
+                    ps.setString(7, request.getParameter("status"));
+
+                    if (newPondId != null) ps.setInt(8, newPondId);
+                    else ps.setNull(8, Types.INTEGER);
+
+                    ps.setString(9, request.getParameter("notes"));
+                    ps.setInt(10, koiId);
+                    ps.setInt(11, orgId);
+                    ps.executeUpdate();
+                    ps.close();
+
+                    boolean pondChanged = (oldPondId == null && newPondId != null)
+                        || (oldPondId != null && !oldPondId.equals(newPondId));
+
+                    if (pondChanged) {
+                        PreparedStatement histPs = con.prepareStatement(
+                            "INSERT INTO koi_pond_history (koi_id, from_pond_id, to_pond_id, moved_by) VALUES (?, ?, ?, ?)");
+                        histPs.setInt(1, koiId);
+
+                        if (oldPondId != null) histPs.setInt(2, oldPondId);
+                        else histPs.setNull(2, Types.INTEGER);
+
+                        if (newPondId != null) histPs.setInt(3, newPondId);
+                        else histPs.setNull(3, Types.INTEGER);
+
+                        histPs.setInt(4, userId);
+                        histPs.executeUpdate();
+                        histPs.close();
+                    }
+
+                    success = "Koi updated successfully.";
+                }
+            }
+
+        } else if ("delete".equals(action)) {
+            int koiId = Integer.parseInt(request.getParameter("id"));
+
+            PreparedStatement histPs = con.prepareStatement("DELETE FROM koi_pond_history WHERE koi_id = ?");
+            histPs.setInt(1, koiId);
+            histPs.executeUpdate();
+            histPs.close();
+
+            PreparedStatement ps = con.prepareStatement("DELETE FROM koi WHERE id = ? AND organization_id = ?");
+            ps.setInt(1, koiId);
+            ps.setInt(2, orgId);
+            ps.executeUpdate();
+            ps.close();
+
+            success = "Koi deleted.";
         }
+
+    } catch (Exception e) {
+        error = e.getMessage();
     }
+
+    List<int[]> pondIds = new ArrayList<>();
+    List<String> pondNames = new ArrayList<>();
+    try {
+        if (con != null && !con.isClosed()) {
+            PreparedStatement pondPs = con.prepareStatement("SELECT id, name FROM ponds WHERE organization_id = ? ORDER BY name");
+            pondPs.setInt(1, orgId);
+            ResultSet pondRs = pondPs.executeQuery();
+            while (pondRs.next()) {
+                pondIds.add(new int[]{pondRs.getInt("id")});
+                pondNames.add(pondRs.getString("name"));
+            }
+            pondRs.close();
+            pondPs.close();
+        }
+    } catch (Exception e) { }
 %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Koi Inventory Management - Koi Pond Manager</title>
-    <link rel="stylesheet" type="text/css" href="css/style.css">
-    <link rel="stylesheet" type="text/css" href="css/koi-inventory.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        /* Show dropdown on hover — replaces the JavaScript toggleKoiMenu function */
-        .koi-dot-menu:hover .koi-dropdown-menu {
-            display: block;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koi - Koi Pond Manager</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
@@ -129,121 +255,322 @@
             <a href="treatments.jsp">Treatments</a>
             <a href="logs.jsp">Logs</a>
         </nav>
+        <div class="user-menu">
+            <span class="user-name"><%= session.getAttribute("fullName") %></span>
+            <span class="user-role"><%= session.getAttribute("role") %></span>
+            <a href="logout" class="btn-logout">Sign Out</a>
+        </div>
     </header>
 
-    <main class="content-wrapper">
-        <div class="container">
-            <header class="inventory-header">
-                <h2>Koi Inventory</h2>
-                <a href="koiProfile.jsp" class="add-task-btn" style="text-decoration: none; color: white;">
-                    <i class="fa fa-plus"></i> Create New Koi Profile
-                </a>
-            </header>
+    <main>
+        <div class="page-header">
+            <h2>Koi Inventory</h2>
+            <button class="btn btn-primary" onclick="openModal('addModal')">+ Add Koi</button>
+        </div>
 
-            <div class="koi-grid-centered">
-                <%
-                    java.sql.Connection con = null;
-                    try {
-                        con = MysqlCon.getConnection();
-                        Statement stmt = con.createStatement();
-                        ResultSet rs = stmt.executeQuery("SELECT * FROM koi ORDER BY created_at DESC");
+        <% if (error != null) { %>
+            <div class="alert alert-danger"><%= error %></div>
+        <% } %>
 
-                        boolean hasKoi = false;
+        <% if (success != null) { %>
+            <div class="alert alert-success"><%= success %></div>
+        <% } %>
+
+        <%
+            boolean hasKoi = false;
+            ResultSet rs = null;
+
+            try {
+                if (con != null && !con.isClosed()) {
+                    PreparedStatement pStmt = con.prepareStatement(
+                        "SELECT k.*, p.name AS pond_name FROM koi k "
+                        + "LEFT JOIN ponds p ON k.pond_id = p.id "
+                        + "WHERE k.organization_id = ? ORDER BY k.name");
+                    pStmt.setInt(1, orgId);
+                    rs = pStmt.executeQuery();
+
+                    if (rs.isBeforeFirst()) {
+                        hasKoi = true;
+        %>
+        <div class="pond-grid">
+            <%
                         while (rs.next()) {
-                            hasKoi = true;
                             int id = rs.getInt("id");
-                            String name    = rs.getString("name");
+                            String name = rs.getString("name");
+                            int age = rs.getInt("age");
+                            boolean ageNull = rs.wasNull();
                             String variety = rs.getString("variety");
                             String breeder = rs.getString("breeder");
-                            String sex     = rs.getString("sex");
-                            int age        = rs.getInt("age");       boolean ageNull  = rs.wasNull();
-                            double size    = rs.getDouble("size_cm"); boolean sizeNull = rs.wasNull();
-                            int pondId     = rs.getInt("pond_id");    boolean pondNull = rs.wasNull();
-                            String status  = rs.getString("status");
-                %>
-                    <%-- Clicking a card navigates to koi.jsp?selectedId=id, which Java uses to open the modal --%>
-                    <a href="koi.jsp?selectedId=<%= id %>" style="text-decoration: none; color: inherit;">
-                    <div class="koi-card-horizontal" style="cursor:pointer;">
-                        <div class="koi-dot-menu" onclick="event.preventDefault(); event.stopPropagation();">
-                            <button class="dot-btn">&#8942;</button>
-                            <div class="koi-dropdown-menu">
-                                <form action="deleteKoi" method="POST" onsubmit="return confirm('Are you sure you want to delete this koi?');">
-                                    <input type="hidden" name="id" value="<%= id %>">
-                                    <button type="submit" class="dropdown-item delete-item">Delete</button>
-                                </form>
-                            </div>
-                        </div>
-                        <div class="koi-card-body">
-                            <div class="koi-card-name">
-                                <h3><%= escapeHtml(name) %></h3>
-                            </div>
-                            <div class="koi-card-stats">
-                                <span><strong>Pond:</strong> <%= pondNull ? "None" : pondId %></span>
-                                <span>
-                                    <strong>Status:</strong>
-                                    <span class="koi-status-text status-<%= status != null ? status : "healthy" %>"><%= orNA(status) %></span>
-                                </span>
-                                <span><strong>Size:</strong> <%= sizeNull ? "N/A" : String.format("%.2f", size) + " cm" %></span>
-                            </div>
-                            <div class="koi-health-bar-wrapper">
-                                <div class="koi-health-bar health-<%= status != null ? status : "healthy" %>"></div>
-                            </div>
-                            <div class="koi-card-actions">
-                                <a href="koiProfile.jsp?id=<%= id %>" class="action-btn" style="text-decoration: none;" onclick="event.stopPropagation();">Update Information</a>
-                            </div>
-                        </div>
-                    </div>
-                    </a>
-                <%
-                        }
+                            String sex = rs.getString("sex");
+                            double sizeCm = rs.getDouble("size_cm");
+                            boolean sizeNull = rs.wasNull();
+                            String status = rs.getString("status");
+                            int pondId = rs.getInt("pond_id");
+                            boolean pondNull = rs.wasNull();
+                            String pondName = rs.getString("pond_name");
+                            String notes = rs.getString("notes");
 
-                        if (!hasKoi) {
-                %>
-                    <div class="empty-state" style="text-align: center; padding: 50px; color: #666;">
-                        <p>No koi profiles found. Click "Create New Koi Profile" to get started!</p>
+                            String badgeClass;
+                            switch (status) {
+                                case "healthy": badgeClass = "badge-good"; break;
+                                case "injured": case "sick": badgeClass = "badge-warn"; break;
+                                case "deceased": badgeClass = "badge-danger"; break;
+                                default: badgeClass = "";
+                            }
+
+                            String jsName = name != null ? name.replace("'", "\\'").replace("\"", "&quot;") : "";
+                            String jsVariety = variety != null ? variety.replace("'", "\\'") : "";
+                            String jsBreeder = breeder != null ? breeder.replace("'", "\\'") : "";
+                            String jsNotes = notes != null ? notes.replace("'", "\\'").replace("\n", "\\n") : "";
+            %>
+            <div class="card pond-card">
+                <div class="pond-card-header">
+                    <h3><%= name %></h3>
+                    <div class="pond-actions">
+                        <span class="badge <%= badgeClass %>"><%= status %></span>
+                        <button class="btn btn-sm btn-edit" onclick="openEditModal(<%= id %>,
+                            '<%= jsName %>',
+                            '<%= ageNull ? "" : age %>',
+                            '<%= jsVariety %>',
+                            '<%= jsBreeder %>',
+                            '<%= sex %>',
+                            '<%= sizeNull ? "" : sizeCm %>',
+                            '<%= status %>',
+                            '<%= pondNull ? "" : pondId %>',
+                            '<%= jsNotes %>')">Edit</button>
+                        <form method="post" action="koi.jsp" style="display:inline;"
+                              onsubmit="return confirm('Delete this koi?');">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="id" value="<%= id %>">
+                            <button type="submit" class="btn btn-sm btn-danger-outline">Delete</button>
+                        </form>
                     </div>
-                <%
-                        }
-                        rs.close();
-                        stmt.close();
-                    } catch (Exception e) {
-                        out.println("<p style='color:red;'>Error loading inventory: " + e.getMessage() + "</p>");
-                    } finally {
-                        if (con != null) try { con.close(); } catch (SQLException e) {}
-                    }
-                %>
+                </div>
+                <div class="pond-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Variety</span>
+                        <span class="detail-value"><%= variety != null ? variety : "—" %></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Sex</span>
+                        <span class="detail-value"><%= sex != null ? sex.substring(0,1).toUpperCase() + sex.substring(1) : "—" %></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Age</span>
+                        <span class="detail-value"><%= !ageNull ? age + " yr" + (age != 1 ? "s" : "") : "—" %></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Size</span>
+                        <span class="detail-value"><%= !sizeNull ? sizeCm + " cm" : "—" %></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Breeder</span>
+                        <span class="detail-value"><%= breeder != null ? breeder : "—" %></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Pond</span>
+                        <span class="detail-value"><%= pondName != null ? pondName : "Unassigned" %></span>
+                    </div>
+                    <% if (notes != null && !notes.isEmpty()) { %>
+                    <div class="detail-row">
+                        <span class="detail-label">Notes</span>
+                        <span class="detail-value"><%= notes %></span>
+                    </div>
+                    <% } %>
+                </div>
             </div>
+            <%
+                        }
+            %>
         </div>
+        <%
+                    }
+                    if (rs != null) rs.close();
+                }
+            } catch (Exception e) {
+        %>
+            <div class="alert alert-danger">Error loading koi: <%= e.getMessage() %></div>
+        <%
+            }
+
+            if (!hasKoi) {
+        %>
+        <div class="section empty-state">
+            <p>No koi yet. Click <strong>+ Add Koi</strong> to add your first fish.</p>
+        </div>
+        <%
+            }
+
+            if (con != null) {
+                try { con.close(); } catch (SQLException e) { }
+            }
+        %>
     </main>
 
-    <div id="koiModal" class="koi-modal-overlay" style="display: <%= showModal ? "flex" : "none" %>;">
-        <div class="koi-modal-content">
-            <a href="koi.jsp" class="koi-modal-close" style="text-decoration: none;">&times;</a>
-            <h2><%= escapeHtml(modalName) %></h2>
-            <div class="koi-modal-details">
-                <p><strong>Variety:</strong> <%= escapeHtml(modalVariety) %></p>
-                <p><strong>Breeder:</strong> <%= escapeHtml(modalBreeder) %></p>
-                <p><strong>Sex:</strong>     <%= escapeHtml(modalSex) %></p>
-                <p><strong>Age:</strong>     <%= modalAge %></p>
-                <p><strong>Size:</strong>    <%= modalSize %></p>
-                <p><strong>Pond ID:</strong> <%= modalPond %></p>
-                <p><strong>Status:</strong>  <%= modalStatus %></p>
-                <% if (!modalDeceased.isEmpty()) { %>
-                    <p><strong>Date of Death:</strong> <%= modalDeceased %></p>
-                <% } %>
-                <% if (!modalNotes.isEmpty()) { %>
-                    <p><strong>Notes:</strong> <%= escapeHtml(modalNotes) %></p>
-                <% } %>
+    <div id="addModal" class="modal-overlay" onclick="if(event.target===this)closeModal('addModal')">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Add New Koi</h3>
+                <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
             </div>
-            <div class="koi-modal-history">
-                <h3>Pond Assignment History</h3>
-                <%= modalHistoryHtml %>
+            <form method="post" action="koi.jsp">
+                <input type="hidden" name="action" value="create">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="add-name">Name *</label>
+                        <input type="text" id="add-name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="add-variety">Variety</label>
+                        <input type="text" id="add-variety" name="variety" placeholder="e.g. Kohaku, Showa">
+                    </div>
+                    <div class="form-group">
+                        <label for="add-sex">Sex</label>
+                        <select id="add-sex" name="sex">
+                            <option value="unknown">Unknown</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="add-age">Age (years)</label>
+                        <input type="number" id="add-age" name="age" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="add-sizeCm">Size (cm)</label>
+                        <input type="number" id="add-sizeCm" name="sizeCm" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="add-breeder">Breeder</label>
+                        <input type="text" id="add-breeder" name="breeder" placeholder="e.g. Dainichi, Sakai">
+                    </div>
+                    <div class="form-group">
+                        <label for="add-status">Status</label>
+                        <select id="add-status" name="status">
+                            <option value="healthy">Healthy</option>
+                            <option value="injured">Injured</option>
+                            <option value="sick">Sick</option>
+                            <option value="deceased">Deceased</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="add-pondId">Pond</label>
+                        <select id="add-pondId" name="pondId">
+                            <option value="">Unassigned</option>
+                            <% for (int i = 0; i < pondIds.size(); i++) { %>
+                                <option value="<%= pondIds.get(i)[0] %>"><%= pondNames.get(i) %></option>
+                            <% } %>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="add-notes">Notes</label>
+                        <textarea id="add-notes" name="notes" rows="3" style="padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;font-family:inherit;resize:vertical;"></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Koi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal-overlay" onclick="if(event.target===this)closeModal('editModal')">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Edit Koi</h3>
+                <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
             </div>
+            <form method="post" action="koi.jsp">
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" id="edit-id" name="id">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="edit-name">Name *</label>
+                        <input type="text" id="edit-name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-variety">Variety</label>
+                        <input type="text" id="edit-variety" name="variety">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-sex">Sex</label>
+                        <select id="edit-sex" name="sex">
+                            <option value="unknown">Unknown</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-age">Age (years)</label>
+                        <input type="number" id="edit-age" name="age" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-sizeCm">Size (cm)</label>
+                        <input type="number" id="edit-sizeCm" name="sizeCm" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-breeder">Breeder</label>
+                        <input type="text" id="edit-breeder" name="breeder">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-status">Status</label>
+                        <select id="edit-status" name="status">
+                            <option value="healthy">Healthy</option>
+                            <option value="injured">Injured</option>
+                            <option value="sick">Sick</option>
+                            <option value="deceased">Deceased</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-pondId">Pond</label>
+                        <select id="edit-pondId" name="pondId">
+                            <option value="">Unassigned</option>
+                            <% for (int i = 0; i < pondIds.size(); i++) { %>
+                                <option value="<%= pondIds.get(i)[0] %>"><%= pondNames.get(i) %></option>
+                            <% } %>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="edit-notes">Notes</label>
+                        <textarea id="edit-notes" name="notes" rows="3" style="padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;font-family:inherit;resize:vertical;"></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <footer>
         <p>&copy; 2026 Koi Pond Manager &mdash; CS157A Team 3</p>
     </footer>
+
+    <script>
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function openEditModal(id, name, age, variety, breeder, sex, sizeCm, status, pondId, notes) {
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-name').value = name;
+            document.getElementById('edit-age').value = age;
+            document.getElementById('edit-variety').value = variety;
+            document.getElementById('edit-breeder').value = breeder;
+            document.getElementById('edit-sex').value = sex;
+            document.getElementById('edit-sizeCm').value = sizeCm;
+            document.getElementById('edit-status').value = status;
+            document.getElementById('edit-pondId').value = pondId;
+            document.getElementById('edit-notes').value = notes;
+            openModal('editModal');
+        }
+    </script>
+
 </body>
 </html>
