@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="java.sql.*, java.util.*, com.koi.MysqlCon" %>
+<%@ page import="java.sql.*, java.util.*, java.text.SimpleDateFormat, com.koi.MysqlCon" %>
 <%
     if (session.getAttribute("userId") == null) {
         response.sendRedirect("login.jsp");
@@ -235,6 +235,75 @@
             pondPs.close();
         }
     } catch (Exception e) { }
+
+    String selectedIdParam = request.getParameter("selectedId");
+    int profileId = -1;
+    boolean showProfile = false;
+    String profName = "", profVariety = "—", profBreeder = "—", profSex = "—";
+    String profAge = "—", profSize = "—", profPond = "—", profStatus = "—";
+    String profNotes = "", profDeceased = "";
+    StringBuilder profHistRows = new StringBuilder();
+    boolean profHasHistory = false;
+
+    if (selectedIdParam != null) {
+        try { profileId = Integer.parseInt(selectedIdParam); } catch (NumberFormatException e) {}
+    }
+
+    if (profileId > 0) {
+        try {
+            if (con == null || con.isClosed()) con = MysqlCon.getConnection();
+            PreparedStatement profPs = con.prepareStatement(
+                "SELECT k.*, p.name AS pond_name FROM koi k "
+              + "LEFT JOIN ponds p ON k.pond_id = p.id "
+              + "WHERE k.id = ? AND k.organization_id = ?");
+            profPs.setInt(1, profileId);
+            profPs.setInt(2, orgId);
+            ResultSet profRs = profPs.executeQuery();
+            if (profRs.next()) {
+                showProfile = true;
+                profName    = profRs.getString("name") != null ? profRs.getString("name") : "";
+                String v = profRs.getString("variety");  if (v != null && !v.isEmpty()) profVariety = v;
+                String b = profRs.getString("breeder");  if (b != null && !b.isEmpty()) profBreeder = b;
+                String s = profRs.getString("sex");      if (s != null && !s.isEmpty()) profSex = s;
+                int pAge = profRs.getInt("age");
+                if (!profRs.wasNull()) profAge = pAge + " yr" + (pAge != 1 ? "s" : "");
+                double pSize = profRs.getDouble("size_cm");
+                if (!profRs.wasNull()) profSize = String.format("%.2f cm", pSize);
+                String pn = profRs.getString("pond_name");
+                profPond = pn != null ? pn : "Unassigned";
+                String st = profRs.getString("status");  if (st != null) profStatus = st;
+                String n = profRs.getString("notes");    if (n != null) profNotes = n;
+                java.sql.Timestamp upd = profRs.getTimestamp("updated_at");
+                if ("deceased".equals(profStatus) && upd != null) {
+                    profDeceased = new SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a").format(upd);
+                }
+            }
+            profRs.close();
+            profPs.close();
+
+            if (showProfile) {
+                PreparedStatement histPs = con.prepareStatement(
+                    "SELECT kph.moved_at, "
+                  + "(SELECT name FROM ponds WHERE id = kph.from_pond_id) AS from_name, "
+                  + "(SELECT name FROM ponds WHERE id = kph.to_pond_id) AS to_name "
+                  + "FROM koi_pond_history kph "
+                  + "WHERE kph.koi_id = ? ORDER BY kph.moved_at ASC");
+                histPs.setInt(1, profileId);
+                ResultSet histRs = histPs.executeQuery();
+                SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy HH:mm");
+                while (histRs.next()) {
+                    profHasHistory = true;
+                    String fromN = histRs.getString("from_name");
+                    String toN = histRs.getString("to_name");
+                    profHistRows.append("<tr><td>").append(sdf.format(histRs.getTimestamp("moved_at"))).append("</td>")
+                                .append("<td>").append(fromN != null ? fromN : "None").append("</td>")
+                                .append("<td>").append(toN != null ? toN : "None").append("</td></tr>");
+                }
+                histRs.close();
+                histPs.close();
+            }
+        } catch (Exception e) { }
+    }
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -328,6 +397,7 @@
                     <h3><%= name %></h3>
                     <div class="pond-actions">
                         <span class="badge <%= badgeClass %>"><%= status %></span>
+                        <a href="koi.jsp?selectedId=<%= id %>" class="btn btn-sm">Details</a>
                         <button class="btn btn-sm btn-edit" onclick="openEditModal(<%= id %>,
                             '<%= jsName %>',
                             '<%= ageNull ? "" : age %>',
@@ -406,6 +476,47 @@
             }
         %>
     </main>
+
+    <div id="profileModal" class="modal-overlay <%= showProfile ? "active" : "" %>" onclick="if(event.target===this)window.location='koi.jsp'">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><%= profName %></h3>
+                <a href="koi.jsp" class="modal-close" style="text-decoration:none;">&times;</a>
+            </div>
+            <div class="pond-details" style="padding:1.5rem;">
+                <div class="detail-row"><span class="detail-label">Variety</span><span class="detail-value"><%= profVariety %></span></div>
+                <div class="detail-row"><span class="detail-label">Breeder</span><span class="detail-value"><%= profBreeder %></span></div>
+                <div class="detail-row"><span class="detail-label">Sex</span><span class="detail-value"><%= profSex %></span></div>
+                <div class="detail-row"><span class="detail-label">Age</span><span class="detail-value"><%= profAge %></span></div>
+                <div class="detail-row"><span class="detail-label">Size</span><span class="detail-value"><%= profSize %></span></div>
+                <div class="detail-row"><span class="detail-label">Pond</span><span class="detail-value"><%= profPond %></span></div>
+                <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value"><%= profStatus %></span></div>
+                <% if (!profDeceased.isEmpty()) { %>
+                <div class="detail-row"><span class="detail-label">Date of Death</span><span class="detail-value"><%= profDeceased %></span></div>
+                <% } %>
+                <% if (!profNotes.isEmpty()) { %>
+                <div class="detail-row"><span class="detail-label">Notes</span><span class="detail-value"><%= profNotes %></span></div>
+                <% } %>
+            </div>
+            <div style="padding:0 1.5rem 1.5rem;">
+                <h4 style="margin:0 0 0.5rem 0;font-size:0.95rem;">Pond Assignment History</h4>
+                <% if (profHasHistory) { %>
+                <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+                    <thead>
+                        <tr style="text-align:left;border-bottom:1px solid var(--border);">
+                            <th style="padding:0.4rem 0;">Date &amp; Time</th>
+                            <th style="padding:0.4rem 0;">From Pond</th>
+                            <th style="padding:0.4rem 0;">To Pond</th>
+                        </tr>
+                    </thead>
+                    <tbody><%= profHistRows.toString() %></tbody>
+                </table>
+                <% } else { %>
+                <p style="color:var(--text-light);margin:0;">No pond transfers recorded.</p>
+                <% } %>
+            </div>
+        </div>
+    </div>
 
     <div id="addModal" class="modal-overlay" onclick="if(event.target===this)closeModal('addModal')">
         <div class="modal">
