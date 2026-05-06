@@ -628,7 +628,16 @@
                             <div class="form-group full-width">
                                 <label for="pondId">Pond</label>
                                 <select id="pondId" name="pondId" required>
-                                    <option value="">Select a pond</option>
+                                    <%
+                                        // Pre-select if ?pondId=N was passed in
+                                        String preselectPondParam = request.getParameter("pondId");
+                                        int preselectPondId = -1;
+                                        if (preselectPondParam != null && !preselectPondParam.isEmpty()) {
+                                            try { preselectPondId = Integer.parseInt(preselectPondParam); }
+                                            catch (NumberFormatException ignored) {}
+                                        }
+                                    %>
+                                    <option value=""<%= preselectPondId == -1 ? " selected" : "" %>>Select a pond</option>
                                     <%
                                         Connection pondCon = null;
                                         Statement pondStmt = null;
@@ -641,8 +650,10 @@
                                             pondRs = pondPStmt.executeQuery();
 
                                             while (pondRs.next()) {
+                                                int pId = pondRs.getInt("id");
+                                                boolean isSelected = (pId == preselectPondId);
                                     %>
-                                        <option value="<%= pondRs.getInt("id") %>">
+                                        <option value="<%= pId %>"<%= isSelected ? " selected" : "" %>>
                                             <%= pondRs.getString("code") %>
                                         </option>
                                     <%

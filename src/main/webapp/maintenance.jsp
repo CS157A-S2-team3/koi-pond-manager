@@ -177,7 +177,7 @@
                             // then oldest tests, then more recent ones — MySQL's default null
                             // ordering happens to give us "most urgent first" for free.
                             PreparedStatement overduePs = con.prepareStatement(
-                                "SELECT code, location_name, koi_count, last_test_at, days_since_test "
+                                "SELECT pond_id, code, location_name, koi_count, last_test_at, days_since_test "
                               + "FROM pond_health "
                               + "WHERE organization_id = ? "
                               + "  AND koi_count > 0 "
@@ -188,6 +188,7 @@
                             boolean hasOverdue = false;
                             while (overdueRs.next()) {
                                 hasOverdue = true;
+                                int pondId = overdueRs.getInt("pond_id");
                                 String code = overdueRs.getString("code");
                                 String locationName = overdueRs.getString("location_name");
                                 int koiCount = overdueRs.getInt("koi_count");
@@ -203,7 +204,7 @@
                             <td><%= koiCount %></td>
                             <td><%= lastDisplay %></td>
                             <td><span class="status-flag overdue"><%= statusLabel %></span></td>
-                            <td><a href="waterTest.jsp" class="action-btn" style="text-decoration:none;">Log Test</a></td>
+                            <td><a href="waterTest.jsp?pondId=<%= pondId %>" class="action-btn" style="text-decoration:none;">Log Test</a></td>
                         </tr>
                     <%
                             }
