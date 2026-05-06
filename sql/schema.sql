@@ -161,23 +161,29 @@ CREATE TABLE IF NOT EXISTS water_tests (
 
 -- Pond health view: a single per-pond row joining the latest water test,
 -- koi counts, and active treatments. Backs the Health page.
--- Uses a window-function CTE to pick the most recent water test per pond
--- (MySQL 8+). Correlated subqueries handle aggregates over koi/treatments.
 CREATE OR REPLACE VIEW pond_health AS
+-- Get the pond and test attributes for each pond (but only keep the latest at the end)
 WITH ranked_tests AS (
     SELECT pond_id, ph, ammonia, nitrite, temperature, created_at,
-           ROW_NUMBER() OVER (PARTITION BY pond_id ORDER BY created_at DESC) AS rn
+          --  For each pond, number the rows from newest to oldest so we can get the latest test
+           ROW_NUMBER() OVER 
+           (PARTITION BY pond_id ORDER BY created_at DESC) AS rn
     FROM water_tests
 )
 SELECT
+    -- Pond fields
     p.id                                AS pond_id,
     p.organization_id                   AS organization_id,
     p.code                              AS code,
     p.name                              AS name,
     p.volume                            AS volume,
     p.is_quarantine                     AS is_quarantine,
+
+    -- Location fields
     l.name                              AS location_name,
     l.display_order                     AS location_order,
+
+    -- Latest test fields
     lt.created_at                       AS last_test_at,
     lt.ph                               AS last_ph,
     lt.ammonia                          AS last_ammonia,
@@ -189,5 +195,7 @@ SELECT
     (SELECT COUNT(*) FROM treatments t WHERE t.pond_id = p.id
         AND DATE_ADD(t.created_at, INTERVAL t.duration DAY) >= CURDATE()) AS active_treatment_count
 FROM ponds p
+-- Every pond belongs to a location
 JOIN pond_locations l ON p.location_id = l.id
+-- Join only the newest test for that pond
 LEFT JOIN ranked_tests lt ON lt.pond_id = p.id AND lt.rn = 1;
