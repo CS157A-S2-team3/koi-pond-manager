@@ -35,9 +35,13 @@ The application centralizes pond operations, reduces human error, and helps prev
 
 ### 1. Initialize the database
 ```bash
-mysql -u root -p < sql/schema.sql
+mysql -u root -p < sql/setup.sql
 ```
-This creates the `koipondmanager` database and all tables.
+This creates the `koipondmanager` database, all tables, the ChampKoi organization, an admin user, and the 55 seeded ponds in one shot. Safe to re-run.
+
+Default dev login: **admin@champkoi.com** / **champkoi**
+
+If you only want the schema with no seed data, run `mysql -u root -p < sql/schema.sql` instead and use the signup page to create your own org.
 
 ### 2. Configure the DB connection
 Open [src/main/java/com/koi/MysqlCon.java](src/main/java/com/koi/MysqlCon.java) and update `USER` / `PASSWORD` to match your local MySQL credentials.

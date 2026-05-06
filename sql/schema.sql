@@ -26,13 +26,26 @@ CREATE TABLE IF NOT EXISTS users (
     FOREIGN KEY (organization_id) REFERENCES organizations(id)
 );
 
+-- Pond locations: per-org facility groups (e.g. "Big Ponds", "Quarantine GH")
+CREATE TABLE IF NOT EXISTS pond_locations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    organization_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    prefix VARCHAR(10) NOT NULL,
+    display_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_org_location (organization_id, name),
+    FOREIGN KEY (organization_id) REFERENCES organizations(id)
+);
+
 -- Ponds table
 CREATE TABLE IF NOT EXISTS ponds (
     id INT AUTO_INCREMENT PRIMARY KEY,
     organization_id INT NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    location VARCHAR(255),
-    volume DOUBLE NOT NULL,
+    code VARCHAR(20) NOT NULL,
+    name VARCHAR(100),
+    location_id INT NOT NULL,
+    volume DOUBLE,
     volume_unit VARCHAR(10) NOT NULL DEFAULT 'gallons',
     length DOUBLE,
     width DOUBLE,
@@ -43,7 +56,9 @@ CREATE TABLE IF NOT EXISTS ponds (
     is_quarantine BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (organization_id) REFERENCES organizations(id)
+    UNIQUE KEY uniq_org_code (organization_id, code),
+    FOREIGN KEY (organization_id) REFERENCES organizations(id),
+    FOREIGN KEY (location_id) REFERENCES pond_locations(id)
 );
 
 -- Treatments table
