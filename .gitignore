@@ -14,3 +14,6 @@ target/
 
 # Logs
 *.log
+
+# Shopify secrets
+.env
