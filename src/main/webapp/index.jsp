@@ -56,8 +56,25 @@
             overdueTasks = overdueRs.getInt("total");
         }
         overdueRs.close();
-        
+
         countStmt.close();
+
+        // Add virtual "overdue water test" tasks (same rule as maintenance.jsp):
+        // stocked ponds with no test ever or last test > 7 days old
+        PreparedStatement overdueTestsStmt = con.prepareStatement(
+            "SELECT COUNT(*) AS total FROM pond_health "
+          + "WHERE organization_id = ? "
+          + "  AND koi_count > 0 "
+          + "  AND (last_test_at IS NULL OR days_since_test > 7)");
+        overdueTestsStmt.setInt(1, (Integer) session.getAttribute("orgId"));
+        ResultSet overdueTestsRs = overdueTestsStmt.executeQuery();
+        if (overdueTestsRs.next()) {
+            int overdueTestCount = overdueTestsRs.getInt("total");
+            totalTasks   += overdueTestCount;
+            overdueTasks += overdueTestCount;
+        }
+        overdueTestsRs.close();
+        overdueTestsStmt.close();
 
         // Get total koi count (excluding deceased)
         PreparedStatement koiCountStmt = con.prepareStatement("SELECT COUNT(*) AS total FROM koi WHERE organization_id = ? AND status != 'deceased'");

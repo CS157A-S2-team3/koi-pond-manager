@@ -150,6 +150,88 @@
         <% } %>
 
         <section class="maintenance-box">
+            <h3>Overdue Water Tests</h3>
+            <p class="subtitle">Virtual tasks: stocked ponds whose last water test is missing or more than 7 days old. Resolves automatically once you log a test for the pond.</p>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pond</th>
+                            <th>Location</th>
+                            <th>Koi</th>
+                            <th>Last Test</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <%
+                        try {
+                            if (con == null || con.isClosed()) con = MysqlCon.getConnection();
+                            // pond_health is a view defined in schema.sql that joins ponds, the
+                            // latest water test per pond, and counts of koi / active treatments.
+                            //   koi_count > 0          -> empty ponds aren't "overdue", just unused
+                            //   last_test_at IS NULL   -> covers the never-tested case
+                            //   days_since_test > 7    -> our staleness threshold (matches health.jsp)
+                            // ORDER BY last_test_at ascending puts NULLs (never-tested) first,
+                            // then oldest tests, then more recent ones — MySQL's default null
+                            // ordering happens to give us "most urgent first" for free.
+                            PreparedStatement overduePs = con.prepareStatement(
+                                "SELECT code, location_name, koi_count, last_test_at, days_since_test "
+                              + "FROM pond_health "
+                              + "WHERE organization_id = ? "
+                              + "  AND koi_count > 0 "
+                              + "  AND (last_test_at IS NULL OR days_since_test > 7) "
+                              + "ORDER BY last_test_at, code");
+                            overduePs.setInt(1, orgId);
+                            ResultSet overdueRs = overduePs.executeQuery();
+                            boolean hasOverdue = false;
+                            while (overdueRs.next()) {
+                                hasOverdue = true;
+                                String code = overdueRs.getString("code");
+                                String locationName = overdueRs.getString("location_name");
+                                int koiCount = overdueRs.getInt("koi_count");
+                                java.sql.Timestamp lastAt = overdueRs.getTimestamp("last_test_at");
+                                int daysSince = overdueRs.getInt("days_since_test");
+                                boolean neverTested = overdueRs.wasNull();
+                                String lastDisplay = neverTested ? "Never" : new java.text.SimpleDateFormat("MMM d").format(lastAt);
+                                String statusLabel = neverTested ? "Never tested" : daysSince + " days overdue";
+                    %>
+                        <tr class="task-row urgent">
+                            <td><strong><%= code %></strong></td>
+                            <td><%= locationName %></td>
+                            <td><%= koiCount %></td>
+                            <td><%= lastDisplay %></td>
+                            <td><span class="status-flag overdue"><%= statusLabel %></span></td>
+                            <td><a href="waterTest.jsp" class="action-btn" style="text-decoration:none;">Log Test</a></td>
+                        </tr>
+                    <%
+                            }
+                            overdueRs.close();
+                            overduePs.close();
+                            if (!hasOverdue) {
+                    %>
+                        <tr>
+                            <td colspan="6" style="text-align:center; color:#6c757d; padding:1.5rem;">
+                                No overdue water tests — every stocked pond is current.
+                            </td>
+                        </tr>
+                    <%
+                            }
+                        } catch (Exception e) {
+                    %>
+                        <tr>
+                            <td colspan="6" style="color:#dc3545;">Error loading overdue tests: <%= e.getMessage() %></td>
+                        </tr>
+                    <%
+                        }
+                    %>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="maintenance-box">
             <h3>Active Tasks</h3>
             <p class="subtitle">Tasks generated from recurring schedules.</p>
             <div class="table-container">
