@@ -406,14 +406,24 @@
                             String jsSize = sizeNull ? "" : String.valueOf(sizeCm);
                             String jsPondId = pondNull ? "" : String.valueOf(pondId);
 
-                            // Build "size · age · sex" overlay (only the parts we have)
-                            List<String> bits = new ArrayList<>();
-                            if (!sizeNull) bits.add(((long) sizeCm) + " cm");
-                            if (!ageNull)  bits.add(age + " yr" + (age != 1 ? "s" : ""));
-                            if (sex != null && !"unknown".equals(sex)) {
-                                bits.add(sex.substring(0, 1).toUpperCase() + sex.substring(1));
+                            // Specs overlay: age, size, sex — each on its own line,
+                            // matching the champkoi-shopify card layout.
+                            StringBuilder specsHtml = new StringBuilder();
+                            if (!ageNull) {
+                                specsHtml.append("<span class=\"koi-spec\">")
+                                         .append(age).append(" yr").append(age != 1 ? "s" : "")
+                                         .append("</span>");
                             }
-                            String specsOverlay = String.join(" · ", bits);
+                            if (!sizeNull) {
+                                specsHtml.append("<span class=\"koi-spec\">")
+                                         .append((long) sizeCm).append(" cm")
+                                         .append("</span>");
+                            }
+                            if (sex != null && !"unknown".equals(sex)) {
+                                specsHtml.append("<span class=\"koi-spec\">")
+                                         .append(sex.substring(0, 1).toUpperCase()).append(sex.substring(1))
+                                         .append("</span>");
+                            }
 
                             // Subtitle below name: just variety (pond is the section heading)
                             String metaLine = (variety != null && !variety.isEmpty()) ? variety : "";
@@ -447,8 +457,8 @@
                         <% if (breeder != null && !breeder.isEmpty()) { %>
                             <div class="koi-card-overlay koi-card-overlay-tl"><%= breeder %></div>
                         <% } %>
-                        <% if (!specsOverlay.isEmpty()) { %>
-                            <div class="koi-card-overlay koi-card-overlay-bl"><%= specsOverlay %></div>
+                        <% if (specsHtml.length() > 0) { %>
+                            <div class="koi-card-overlay koi-card-overlay-bl"><%= specsHtml.toString() %></div>
                         <% } %>
                         <% if (!"healthy".equals(status)) { %>
                             <span class="koi-card-status badge <%= badgeClass %>"><%= status %></span>

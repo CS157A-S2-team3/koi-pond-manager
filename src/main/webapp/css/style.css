@@ -381,6 +381,9 @@ footer {
     background: #f0f0f0;
     aspect-ratio: 3 / 4;
     overflow: hidden;
+    /* Container queries so the overlay font-size scales with card width
+       (matches champkoi-shopify's clamp + cqw approach). */
+    container-type: inline-size;
 }
 
 .koi-card-img {
@@ -402,27 +405,53 @@ footer {
     letter-spacing: 0.05em;
 }
 
-/* Glassy overlay chips on the image */
+/* Image overlays — modeled on champkoi-shopify card-product-koi.css.
+   Shared base: just positioning + white text. Only the breeder chip gets
+   the glass-pill treatment; specs are plain text with a soft mask. */
 .koi-card-overlay {
     position: absolute;
-    background: rgba(15, 25, 35, 0.55);
     color: #fff;
-    backdrop-filter: blur(8px) saturate(140%);
-    -webkit-backdrop-filter: blur(8px) saturate(140%);
-    padding: 0.22rem 0.55rem;
-    border-radius: 999px;
-    font-size: 0.72rem;
+    font-size: clamp(11px, 5cqw, 14px);
     font-weight: 500;
-    letter-spacing: 0.02em;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    max-width: calc(100% - 1rem);
+    line-height: 1.2;
+    pointer-events: none;
+}
+
+/* Breeder (top-left): glassy chip — premium label feel */
+.koi-card-overlay-tl {
+    top: 12px;
+    left: 12px;
+    background: rgba(15, 20, 30, 0.42);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    box-shadow: 0 4px 16px 0 rgba(22, 30, 50, 0.18);
+    padding: 0.28em 0.65em;
+    border-radius: 0.5em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    max-width: calc(100% - 24px);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.koi-card-overlay-tl { top: 0.5rem; left: 0.5rem; }
-.koi-card-overlay-bl { bottom: 0.5rem; left: 0.5rem; }
+/* Specs (bottom-left): plain white text, stacked, with a radial mask that
+   softens the edges so text doesn't sit harshly on the photo. */
+.koi-card-overlay-bl {
+    bottom: 12px;
+    left: 12px;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+    text-align: left;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    -webkit-mask-image: radial-gradient(ellipse 200% 350% at 50% 50%, black 50%, transparent 100%);
+    mask-image: radial-gradient(ellipse 200% 350% at 50% 50%, black 50%, transparent 100%);
+}
+
+.koi-card-overlay-bl .koi-spec {
+    display: block;
+}
 
 .koi-card-status {
     position: absolute;
