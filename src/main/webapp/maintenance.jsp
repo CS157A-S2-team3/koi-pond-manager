@@ -22,14 +22,20 @@
             String notes = request.getParameter("notes");
             String freq = request.getParameter("freq");
             String dueAt = request.getParameter("due_at");
+            String pondIdParam = request.getParameter("pond_id");
 
             PreparedStatement ps = con.prepareStatement(
-                "INSERT INTO MaintenanceSchedule (organization_id, notes, freq, user_id) VALUES (?, ?, ?, ?)",
+                "INSERT INTO MaintenanceSchedule (organization_id, pond_id, notes, freq, user_id) VALUES (?, ?, ?, ?, ?)",
                 Statement.RETURN_GENERATED_KEYS);
             ps.setInt(1, orgId);
-            ps.setString(2, notes);
-            ps.setString(3, freq);
-            ps.setInt(4, userId);
+            if (pondIdParam != null && !pondIdParam.isEmpty()) {
+                ps.setInt(2, Integer.parseInt(pondIdParam));
+            } else {
+                ps.setNull(2, java.sql.Types.INTEGER);
+            }
+            ps.setString(3, notes);
+            ps.setString(4, freq);
+            ps.setInt(5, userId);
             ps.executeUpdate();
             ResultSet keys = ps.getGeneratedKeys();
             if (keys.next()) {
@@ -157,6 +163,7 @@
                     <thead>
                         <tr>
                             <th>Task Name</th>
+                            <th>Pond</th>
                             <th>Frequency</th>
                             <th>Due Date</th>
                             <th>Status</th>
@@ -168,10 +175,12 @@
                     <%
                         try {
                             if (con == null || con.isClosed()) con = MysqlCon.getConnection();
-                            String sql = "SELECT t.schedule_id, t.due_at, t.status, t.notes, s.freq " +
+                            String sql = "SELECT t.schedule_id, t.due_at, t.status, t.notes, s.freq, p.name AS pond_name " +
                                          "FROM MaintenanceTask t " +
                                          "JOIN MaintenanceSchedule s ON t.schedule_id = s.id " +
-                                         "WHERE s.organization_id = ? AND t.status <> 'Completed' " +
+                                         "JOIN users u ON s.user_id = u.id " +
+                                         "LEFT JOIN ponds p ON s.pond_id = p.id " +
+                                         "WHERE u.organization_id = ? AND s.status = 'Active' AND t.status <> 'Completed' " +
                                          "ORDER BY t.due_at ASC";
                             PreparedStatement ps = con.prepareStatement(sql);
                             ps.setInt(1, orgId);
@@ -187,6 +196,8 @@
                                 Date dueDate = rs.getDate("due_at");
                                 String status = rs.getString("status");
                                 int scheduleId = rs.getInt("schedule_id");
+                                String pondName = rs.getString("pond_name");
+                                String pondDisplay = (pondName != null && !pondName.isEmpty()) ? pondName : "—";
                                 
                                 LocalDate due = dueDate.toLocalDate();
                                 boolean isOverdue = due.isBefore(today) && !"Completed".equals(status);
@@ -211,6 +222,7 @@
                     %>
                         <tr class="<%= rowClass %>">
                             <td><%= taskNotes %></td>
+                            <td><%= pondDisplay %></td>
                             <td><%= freq %></td>
                             <td><%= dueDate %></td>
                             <td><span class="status-flag <%= statusClass %>"><%= displayStatus %></span></td>
@@ -273,6 +285,29 @@
                 <div class="form-group">
                     <label>Task Name</label>
                     <input type="text" name="notes" placeholder="e.g., Filter Rinse" required>
+                </div>
+                <div class="form-group">
+                    <label>Associated Pond</label>
+                    <select name="pond_id" required>
+                        <option value="">— None —</option>
+                        <%
+                            try {
+                                java.sql.Connection pondCon = MysqlCon.getConnection();
+                                PreparedStatement pondPs = pondCon.prepareStatement(
+                                    "SELECT id, name FROM ponds WHERE organization_id = ? ORDER BY name ASC");
+                                pondPs.setInt(1, orgId);
+                                ResultSet pondRs = pondPs.executeQuery();
+                                while (pondRs.next()) {
+                        %>
+                        <option value="<%= pondRs.getInt("id") %>"><%= pondRs.getString("name") %></option>
+                        <%
+                                }
+                                pondRs.close();
+                                pondPs.close();
+                                pondCon.close();
+                            } catch (Exception e) { /* ignore */ }
+                        %>
+                    </select>
                 </div>
                 <div class="form-row">
                     <div class="form-group">

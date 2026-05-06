@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS treatments (
 CREATE TABLE IF NOT EXISTS MaintenanceSchedule (
     id INT AUTO_INCREMENT PRIMARY KEY,
     organization_id INT NOT NULL,
+    pond_id INT,
     notes TEXT,
     status VARCHAR(20) DEFAULT 'Active',
     freq VARCHAR(50) NOT NULL, -- Daily, Weekly, Biweekly, Monthly
@@ -75,6 +76,7 @@ CREATE TABLE IF NOT EXISTS MaintenanceSchedule (
     completed_at TIMESTAMP NULL,
     user_id INT NOT NULL,
     FOREIGN KEY (organization_id) REFERENCES organizations(id),
+    FOREIGN KEY (pond_id) REFERENCES ponds(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
