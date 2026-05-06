@@ -119,8 +119,11 @@ CREATE TABLE IF NOT EXISTS koi (
     status ENUM('healthy', 'injured', 'sick', 'deceased') NOT NULL DEFAULT 'healthy',
     pond_id INT,
     notes TEXT,
+    image_url VARCHAR(500),
+    shopify_product_id VARCHAR(64),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_org_shopify_product (organization_id, shopify_product_id),
     FOREIGN KEY (organization_id) REFERENCES organizations(id),
     FOREIGN KEY (pond_id) REFERENCES ponds(id)
 );
@@ -155,3 +158,36 @@ CREATE TABLE IF NOT EXISTS water_tests (
     FOREIGN KEY (pond_id) REFERENCES ponds(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+-- Pond health view: a single per-pond row joining the latest water test,
+-- koi counts, and active treatments. Backs the Health page.
+-- Uses a window-function CTE to pick the most recent water test per pond
+-- (MySQL 8+). Correlated subqueries handle aggregates over koi/treatments.
+CREATE OR REPLACE VIEW pond_health AS
+WITH ranked_tests AS (
+    SELECT pond_id, ph, ammonia, nitrite, temperature, created_at,
+           ROW_NUMBER() OVER (PARTITION BY pond_id ORDER BY created_at DESC) AS rn
+    FROM water_tests
+)
+SELECT
+    p.id                                AS pond_id,
+    p.organization_id                   AS organization_id,
+    p.code                              AS code,
+    p.name                              AS name,
+    p.volume                            AS volume,
+    p.is_quarantine                     AS is_quarantine,
+    l.name                              AS location_name,
+    l.display_order                     AS location_order,
+    lt.created_at                       AS last_test_at,
+    lt.ph                               AS last_ph,
+    lt.ammonia                          AS last_ammonia,
+    lt.nitrite                          AS last_nitrite,
+    lt.temperature                      AS last_temperature,
+    DATEDIFF(CURDATE(), DATE(lt.created_at)) AS days_since_test,
+    (SELECT COUNT(*) FROM koi k        WHERE k.pond_id = p.id) AS koi_count,
+    (SELECT COUNT(*) FROM koi k        WHERE k.pond_id = p.id AND k.status <> 'healthy') AS unhealthy_koi_count,
+    (SELECT COUNT(*) FROM treatments t WHERE t.pond_id = p.id
+        AND DATE_ADD(t.created_at, INTERVAL t.duration DAY) >= CURDATE()) AS active_treatment_count
+FROM ponds p
+JOIN pond_locations l ON p.location_id = l.id
+LEFT JOIN ranked_tests lt ON lt.pond_id = p.id AND lt.rn = 1;
