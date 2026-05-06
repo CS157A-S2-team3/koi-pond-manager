@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="java.sql.*, java.util.*, java.text.SimpleDateFormat, com.koi.MysqlCon" %>
+<%@ page import="java.sql.*, java.util.*, java.text.SimpleDateFormat, com.koi.MysqlCon, com.koi.EnvLoader" %>
 <%
     if (session.getAttribute("userId") == null) {
         response.sendRedirect("login.jsp");
@@ -40,8 +40,8 @@
             }
 
             if (error == null) {
-                String sql = "INSERT INTO koi (organization_id, name, age, variety, breeder, sex, size_cm, status, pond_id, notes) "
-                           + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                String sql = "INSERT INTO koi (organization_id, name, age, variety, breeder, sex, size_cm, status, pond_id, notes, image_url) "
+                           + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
                 ps.setInt(1, orgId);
                 ps.setString(2, request.getParameter("name"));
@@ -64,6 +64,9 @@
                 else ps.setNull(9, Types.INTEGER);
 
                 ps.setString(10, request.getParameter("notes"));
+                String imgParam = request.getParameter("imageUrl");
+                if (imgParam != null && !imgParam.isEmpty()) ps.setString(11, imgParam.trim());
+                else ps.setNull(11, Types.VARCHAR);
                 ps.executeUpdate();
 
                 ResultSet keys = ps.getGeneratedKeys();
@@ -148,7 +151,7 @@
                 }
 
                 if (error == null) {
-                    String sql = "UPDATE koi SET name=?, age=?, variety=?, breeder=?, sex=?, size_cm=?, status=?, pond_id=?, notes=? "
+                    String sql = "UPDATE koi SET name=?, age=?, variety=?, breeder=?, sex=?, size_cm=?, status=?, pond_id=?, notes=?, image_url=? "
                                + "WHERE id=? AND organization_id=?";
                     PreparedStatement ps = con.prepareStatement(sql);
                     ps.setString(1, request.getParameter("name"));
@@ -171,8 +174,11 @@
                     else ps.setNull(8, Types.INTEGER);
 
                     ps.setString(9, request.getParameter("notes"));
-                    ps.setInt(10, koiId);
-                    ps.setInt(11, orgId);
+                    String imgParam = request.getParameter("imageUrl");
+                    if (imgParam != null && !imgParam.isEmpty()) ps.setString(10, imgParam.trim());
+                    else ps.setNull(10, Types.VARCHAR);
+                    ps.setInt(11, koiId);
+                    ps.setInt(12, orgId);
                     ps.executeUpdate();
                     ps.close();
 
@@ -241,7 +247,7 @@
     boolean showProfile = false;
     String profName = "", profVariety = "—", profBreeder = "—", profSex = "—";
     String profAge = "—", profSize = "—", profPond = "—", profStatus = "—";
-    String profNotes = "", profDeceased = "";
+    String profNotes = "", profDeceased = "", profImageUrl = "";
     StringBuilder profHistRows = new StringBuilder();
     boolean profHasHistory = false;
 
@@ -273,6 +279,7 @@
                 profPond = pn != null ? pn : "Unassigned";
                 String st = profRs.getString("status");  if (st != null) profStatus = st;
                 String n = profRs.getString("notes");    if (n != null) profNotes = n;
+                String iu = profRs.getString("image_url"); if (iu != null) profImageUrl = iu;
                 java.sql.Timestamp upd = profRs.getTimestamp("updated_at");
                 if ("deceased".equals(profStatus) && upd != null) {
                     profDeceased = new SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a").format(upd);
@@ -318,9 +325,20 @@
     <%@ include file="header.jsp" %>
 
     <main>
+        <%
+            String shopifyDomain = null;
+            try { shopifyDomain = EnvLoader.get("SHOPIFY_SHOP_DOMAIN"); } catch (Exception ignore) {}
+            boolean showShopifyImport = "admin".equals(session.getAttribute("role"))
+                                     && shopifyDomain != null && !shopifyDomain.isEmpty();
+        %>
         <div class="page-header">
             <h2>Koi Inventory</h2>
-            <button class="btn btn-primary" onclick="openModal('addModal')">+ Add Koi</button>
+            <div>
+                <% if (showShopifyImport) { %>
+                    <a href="import-koi.jsp" class="btn btn-secondary">Import from Shopify</a>
+                <% } %>
+                <button class="btn btn-primary" onclick="openModal('addModal')">+ Add Koi</button>
+            </div>
         </div>
 
         <% if (error != null) { %>
@@ -364,6 +382,7 @@
                             boolean pondNull = rs.wasNull();
                             String pondName = rs.getString("pond_name");
                             String notes = rs.getString("notes");
+                            String imageUrl = rs.getString("image_url");
 
                             String badgeClass;
                             switch (status) {
@@ -377,8 +396,14 @@
                             String jsVariety = variety != null ? variety.replace("'", "\\'") : "";
                             String jsBreeder = breeder != null ? breeder.replace("'", "\\'") : "";
                             String jsNotes = notes != null ? notes.replace("'", "\\'").replace("\n", "\\n") : "";
+                            String jsImageUrl = imageUrl != null ? imageUrl.replace("'", "\\'") : "";
             %>
             <div class="card pond-card">
+                <% if (imageUrl != null && !imageUrl.isEmpty()) { %>
+                    <a href="koi.jsp?selectedId=<%= id %>" class="koi-thumb-link">
+                        <img class="koi-thumb" src="<%= imageUrl %>" alt="<%= name %>" loading="lazy">
+                    </a>
+                <% } %>
                 <div class="pond-card-header">
                     <h3><%= name %></h3>
                     <div class="pond-actions">
@@ -393,7 +418,8 @@
                             '<%= sizeNull ? "" : sizeCm %>',
                             '<%= status %>',
                             '<%= pondNull ? "" : pondId %>',
-                            '<%= jsNotes %>')">Edit</button>
+                            '<%= jsNotes %>',
+                            '<%= jsImageUrl %>')">Edit</button>
                         <form method="post" action="koi.jsp" style="display:inline;"
                               onsubmit="return confirm('Delete this koi?');">
                             <input type="hidden" name="action" value="delete">
@@ -469,6 +495,9 @@
                 <h3><%= profName %></h3>
                 <a href="koi.jsp" class="modal-close" style="text-decoration:none;">&times;</a>
             </div>
+            <% if (!profImageUrl.isEmpty()) { %>
+                <img class="koi-photo" src="<%= profImageUrl %>" alt="<%= profName %>">
+            <% } %>
             <div class="pond-details" style="padding:1.5rem;">
                 <div class="detail-row"><span class="detail-label">Variety</span><span class="detail-value"><%= profVariety %></span></div>
                 <div class="detail-row"><span class="detail-label">Breeder</span><span class="detail-value"><%= profBreeder %></span></div>
@@ -560,6 +589,10 @@
                         </select>
                     </div>
                     <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="add-imageUrl">Image URL</label>
+                        <input type="url" id="add-imageUrl" name="imageUrl" placeholder="https://...">
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
                         <label for="add-notes">Notes</label>
                         <textarea id="add-notes" name="notes" rows="3" style="padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;font-family:inherit;resize:vertical;"></textarea>
                     </div>
@@ -629,6 +662,10 @@
                         </select>
                     </div>
                     <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="edit-imageUrl">Image URL</label>
+                        <input type="url" id="edit-imageUrl" name="imageUrl" placeholder="https://...">
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
                         <label for="edit-notes">Notes</label>
                         <textarea id="edit-notes" name="notes" rows="3" style="padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;font-family:inherit;resize:vertical;"></textarea>
                     </div>
@@ -654,7 +691,7 @@
             document.getElementById(id).classList.remove('active');
         }
 
-        function openEditModal(id, name, age, variety, breeder, sex, sizeCm, status, pondId, notes) {
+        function openEditModal(id, name, age, variety, breeder, sex, sizeCm, status, pondId, notes, imageUrl) {
             document.getElementById('edit-id').value = id;
             document.getElementById('edit-name').value = name;
             document.getElementById('edit-age').value = age;
@@ -665,6 +702,7 @@
             document.getElementById('edit-status').value = status;
             document.getElementById('edit-pondId').value = pondId;
             document.getElementById('edit-notes').value = notes;
+            document.getElementById('edit-imageUrl').value = imageUrl || '';
             openModal('editModal');
         }
     </script>
