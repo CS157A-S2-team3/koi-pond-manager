@@ -124,7 +124,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Pond Name</th>
+                        <th>Code</th>
                         <th>Location</th>
                         <th>Volume</th>
                         <th>Filtration</th>
@@ -135,18 +135,24 @@
                 <%
                     try {
                         if (con != null && !con.isClosed()) {
-                            PreparedStatement stmt = con.prepareStatement("SELECT * FROM ponds WHERE organization_id = ? ORDER BY name");
+                            PreparedStatement stmt = con.prepareStatement(
+                                "SELECT p.code, p.volume, p.volume_unit, p.filtration_type, "
+                              + "       p.uv_bulb_count, p.uv_bulb_wattage, l.name AS location_name, l.display_order "
+                              + "FROM ponds p JOIN pond_locations l ON p.location_id = l.id "
+                              + "WHERE p.organization_id = ? ORDER BY l.display_order, p.code");
                             stmt.setInt(1, (Integer) session.getAttribute("orgId"));
                             ResultSet rs = stmt.executeQuery();
 
                             boolean hasRows = false;
                             while (rs.next()) {
                                 hasRows = true;
+                                double volume = rs.getDouble("volume");
+                                boolean volumeNull = rs.wasNull();
                 %>
                     <tr>
-                        <td><%= rs.getString("name") %></td>
-                        <td><%= rs.getString("location") != null ? rs.getString("location") : "—" %></td>
-                        <td><%= String.format("%,.0f", rs.getDouble("volume")) %> <%= rs.getString("volume_unit") %></td>
+                        <td><%= rs.getString("code") %></td>
+                        <td><%= rs.getString("location_name") %></td>
+                        <td><%= volumeNull ? "—" : String.format("%,.0f", volume) + " " + rs.getString("volume_unit") %></td>
                         <td><%= rs.getString("filtration_type") != null ? rs.getString("filtration_type") : "—" %></td>
                         <td><%= rs.getInt("uv_bulb_count") %> @ <%= rs.getDouble("uv_bulb_wattage") %>W</td>
                     </tr>

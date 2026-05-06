@@ -636,14 +636,14 @@
 
                                         try {
                                             pondCon = MysqlCon.getConnection();
-                                            PreparedStatement pondPStmt = pondCon.prepareStatement("SELECT id, name FROM ponds WHERE organization_id = ? ORDER BY name");
+                                            PreparedStatement pondPStmt = pondCon.prepareStatement("SELECT id, code FROM ponds WHERE organization_id = ? ORDER BY code");
                                             pondPStmt.setInt(1, (Integer) session.getAttribute("orgId"));
                                             pondRs = pondPStmt.executeQuery();
 
                                             while (pondRs.next()) {
                                     %>
                                         <option value="<%= pondRs.getInt("id") %>">
-                                            <%= pondRs.getString("name") %> (ID: <%= pondRs.getInt("id") %>)
+                                            <%= pondRs.getString("code") %>
                                         </option>
                                     <%
                                             }

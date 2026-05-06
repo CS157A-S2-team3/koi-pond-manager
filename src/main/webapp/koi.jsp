@@ -119,7 +119,7 @@
 
                 if (error == null && transferAttempted) {
                     PreparedStatement quarantinePs = con.prepareStatement(
-                        "SELECT name FROM ponds WHERE id = ? AND is_quarantine = 1"
+                        "SELECT code FROM ponds WHERE id = ? AND is_quarantine = 1"
                     );
 
                     if (newPondId != null) {
@@ -127,7 +127,7 @@
                         ResultSet quarantineRs = quarantinePs.executeQuery();
 
                         if (quarantineRs.next()) {
-                            error = "Transfer blocked: " + quarantineRs.getString("name") + " is marked as quarantine.";
+                            error = "Transfer blocked: " + quarantineRs.getString("code") + " is marked as quarantine.";
                         }
 
                         quarantineRs.close();
@@ -138,7 +138,7 @@
                         ResultSet quarantineRs = quarantinePs.executeQuery();
 
                         if (quarantineRs.next()) {
-                            error = "Transfer blocked: " + quarantineRs.getString("name") + " is marked as quarantine.";
+                            error = "Transfer blocked: " + quarantineRs.getString("code") + " is marked as quarantine.";
                         }
 
                         quarantineRs.close();
@@ -224,12 +224,12 @@
     List<String> pondNames = new ArrayList<>();
     try {
         if (con != null && !con.isClosed()) {
-            PreparedStatement pondPs = con.prepareStatement("SELECT id, name FROM ponds WHERE organization_id = ? ORDER BY name");
+            PreparedStatement pondPs = con.prepareStatement("SELECT id, code FROM ponds WHERE organization_id = ? ORDER BY code");
             pondPs.setInt(1, orgId);
             ResultSet pondRs = pondPs.executeQuery();
             while (pondRs.next()) {
                 pondIds.add(new int[]{pondRs.getInt("id")});
-                pondNames.add(pondRs.getString("name"));
+                pondNames.add(pondRs.getString("code"));
             }
             pondRs.close();
             pondPs.close();
@@ -284,8 +284,8 @@
             if (showProfile) {
                 PreparedStatement histPs = con.prepareStatement(
                     "SELECT kph.moved_at, "
-                  + "(SELECT name FROM ponds WHERE id = kph.from_pond_id) AS from_name, "
-                  + "(SELECT name FROM ponds WHERE id = kph.to_pond_id) AS to_name "
+                  + "(SELECT code FROM ponds WHERE id = kph.from_pond_id) AS from_name, "
+                  + "(SELECT code FROM ponds WHERE id = kph.to_pond_id) AS to_name "
                   + "FROM koi_pond_history kph "
                   + "WHERE kph.koi_id = ? ORDER BY kph.moved_at ASC");
                 histPs.setInt(1, profileId);
