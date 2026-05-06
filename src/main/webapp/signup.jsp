@@ -7,7 +7,7 @@
     <title>Sign Up — Koi Pond Manager</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="auth-page">
 
     <div class="auth-container">
         <div class="auth-card auth-card-wide">
