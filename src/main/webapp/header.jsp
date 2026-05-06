@@ -7,6 +7,7 @@
         <a href="waterTest.jsp">Water</a>
         <a href="treatments.jsp">Treatments</a>
         <a href="maintenance.jsp">Maintenance</a>
+        <a href="health.jsp">Health</a>
     </nav>
     <div class="user-menu">
         <span class="user-name"><%= session.getAttribute("fullName") %></span>
