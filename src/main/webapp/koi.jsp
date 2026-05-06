@@ -365,7 +365,7 @@
                     if (rs.isBeforeFirst()) {
                         hasKoi = true;
         %>
-        <div class="pond-grid">
+        <div class="koi-grid">
             <%
                         while (rs.next()) {
                             int id = rs.getInt("id");
@@ -397,68 +397,56 @@
                             String jsBreeder = breeder != null ? breeder.replace("'", "\\'") : "";
                             String jsNotes = notes != null ? notes.replace("'", "\\'").replace("\n", "\\n") : "";
                             String jsImageUrl = imageUrl != null ? imageUrl.replace("'", "\\'") : "";
+                            String jsAge = ageNull ? "" : String.valueOf(age);
+                            String jsSize = sizeNull ? "" : String.valueOf(sizeCm);
+                            String jsPondId = pondNull ? "" : String.valueOf(pondId);
+
+                            // Build "size · age · sex" overlay (only the parts we have)
+                            List<String> bits = new ArrayList<>();
+                            if (!sizeNull) bits.add(((long) sizeCm) + " cm");
+                            if (!ageNull)  bits.add(age + " yr" + (age != 1 ? "s" : ""));
+                            if (sex != null && !"unknown".equals(sex)) {
+                                bits.add(sex.substring(0, 1).toUpperCase() + sex.substring(1));
+                            }
+                            String specsOverlay = String.join(" · ", bits);
+
+                            // Subtitle below name: variety · pond
+                            List<String> metaBits = new ArrayList<>();
+                            if (variety != null && !variety.isEmpty()) metaBits.add(variety);
+                            metaBits.add(pondName != null ? pondName : "Unassigned");
+                            String metaLine = String.join(" · ", metaBits);
             %>
-            <div class="card pond-card">
-                <% if (imageUrl != null && !imageUrl.isEmpty()) { %>
-                    <a href="koi.jsp?selectedId=<%= id %>" class="koi-thumb-link">
-                        <img class="koi-thumb" src="<%= imageUrl %>" alt="<%= name %>" loading="lazy">
-                    </a>
-                <% } %>
-                <div class="pond-card-header">
-                    <h3><%= name %></h3>
-                    <div class="pond-actions">
-                        <span class="badge <%= badgeClass %>"><%= status %></span>
-                        <a href="koi.jsp?selectedId=<%= id %>" class="btn btn-sm">Details</a>
-                        <button class="btn btn-sm btn-edit" onclick="openEditModal(<%= id %>,
-                            '<%= jsName %>',
-                            '<%= ageNull ? "" : age %>',
-                            '<%= jsVariety %>',
-                            '<%= jsBreeder %>',
-                            '<%= sex %>',
-                            '<%= sizeNull ? "" : sizeCm %>',
-                            '<%= status %>',
-                            '<%= pondNull ? "" : pondId %>',
-                            '<%= jsNotes %>',
-                            '<%= jsImageUrl %>')">Edit</button>
-                        <form method="post" action="koi.jsp" style="display:inline;"
-                              onsubmit="return confirm('Delete this koi?');">
-                            <input type="hidden" name="action" value="delete">
-                            <input type="hidden" name="id" value="<%= id %>">
-                            <button type="submit" class="btn btn-sm btn-danger-outline">Delete</button>
-                        </form>
+            <div class="koi-card">
+                <a class="koi-card-link" href="koi.jsp?selectedId=<%= id %>">
+                    <div class="koi-card-media">
+                        <% if (imageUrl != null && !imageUrl.isEmpty()) { %>
+                            <img class="koi-card-img" src="<%= imageUrl %>" alt="<%= name %>" loading="lazy">
+                        <% } else { %>
+                            <div class="koi-card-empty">No photo</div>
+                        <% } %>
+                        <% if (breeder != null && !breeder.isEmpty()) { %>
+                            <div class="koi-card-overlay koi-card-overlay-tl"><%= breeder %></div>
+                        <% } %>
+                        <% if (!specsOverlay.isEmpty()) { %>
+                            <div class="koi-card-overlay koi-card-overlay-bl"><%= specsOverlay %></div>
+                        <% } %>
+                        <% if (!"healthy".equals(status)) { %>
+                            <span class="koi-card-status badge <%= badgeClass %>"><%= status %></span>
+                        <% } %>
                     </div>
-                </div>
-                <div class="pond-details">
-                    <div class="detail-row">
-                        <span class="detail-label">Variety</span>
-                        <span class="detail-value"><%= variety != null ? variety : "—" %></span>
+                    <div class="koi-card-body">
+                        <h3 class="koi-card-title"><%= name %></h3>
+                        <p class="koi-card-meta"><%= metaLine %></p>
                     </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Sex</span>
-                        <span class="detail-value"><%= sex != null ? sex.substring(0,1).toUpperCase() + sex.substring(1) : "—" %></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Age</span>
-                        <span class="detail-value"><%= !ageNull ? age + " yr" + (age != 1 ? "s" : "") : "—" %></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Size</span>
-                        <span class="detail-value"><%= !sizeNull ? sizeCm + " cm" : "—" %></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Breeder</span>
-                        <span class="detail-value"><%= breeder != null ? breeder : "—" %></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Pond</span>
-                        <span class="detail-value"><%= pondName != null ? pondName : "Unassigned" %></span>
-                    </div>
-                    <% if (notes != null && !notes.isEmpty()) { %>
-                    <div class="detail-row">
-                        <span class="detail-label">Notes</span>
-                        <span class="detail-value"><%= notes %></span>
-                    </div>
-                    <% } %>
+                </a>
+                <div class="koi-card-actions">
+                    <button class="btn btn-sm btn-edit" onclick="openEditModal('<%= id %>','<%= jsName %>','<%= jsAge %>','<%= jsVariety %>','<%= jsBreeder %>','<%= sex %>','<%= jsSize %>','<%= status %>','<%= jsPondId %>','<%= jsNotes %>','<%= jsImageUrl %>')">Edit</button>
+                    <form method="post" action="koi.jsp" style="display:inline;"
+                          onsubmit="return confirm('Delete this koi?');">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="id" value="<%= id %>">
+                        <button type="submit" class="btn btn-sm btn-danger-outline">Delete</button>
+                    </form>
                 </div>
             </div>
             <%

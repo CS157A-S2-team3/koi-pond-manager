@@ -334,6 +334,143 @@ footer {
     color: var(--text-light);
 }
 
+/* Koi profile photo (used in the details modal) */
+.koi-photo {
+    display: block;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 280px;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    background: #f0f0f0;
+}
+
+/* Koi listing — image-forward storefront-style cards */
+.koi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.25rem;
+}
+
+.koi-card {
+    position: relative;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.koi-card:hover {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.koi-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.koi-card-media {
+    position: relative;
+    background: #f0f0f0;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+}
+
+.koi-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.koi-card-empty {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-light);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Glassy overlay chips on the image */
+.koi-card-overlay {
+    position: absolute;
+    background: rgba(15, 25, 35, 0.55);
+    color: #fff;
+    backdrop-filter: blur(8px) saturate(140%);
+    -webkit-backdrop-filter: blur(8px) saturate(140%);
+    padding: 0.22rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    max-width: calc(100% - 1rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.koi-card-overlay-tl { top: 0.5rem; left: 0.5rem; }
+.koi-card-overlay-bl { bottom: 0.5rem; left: 0.5rem; }
+
+.koi-card-status {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+}
+
+.koi-card-body {
+    padding: 0.7rem 0.9rem 0.85rem;
+}
+
+.koi-card-title {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.koi-card-meta {
+    margin: 0.2rem 0 0;
+    font-size: 0.78rem;
+    color: var(--text-light);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Edit/Delete reveal on hover, bottom-right of card */
+.koi-card-actions {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    display: flex;
+    gap: 0.35rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.koi-card:hover .koi-card-actions,
+.koi-card:focus-within .koi-card-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
 /* Pond grouping by location */
 .pond-section {
     margin-bottom: 2rem;
