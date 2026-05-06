@@ -623,9 +623,7 @@
         </div>
     </main>
 
-    <footer>
-        <p>&copy; 2026 Koi Pond Manager &mdash; CS157A Team 3</p>
-    </footer>
+    <%@ include file="footer.jsp" %>
 
     <div id="treatmentModal" class="modal-overlay">
         <div class="modal-box">
