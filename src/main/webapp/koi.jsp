@@ -355,18 +355,21 @@
 
             try {
                 if (con != null && !con.isClosed()) {
+                    // Group koi by pond. 
+                    // k.pond_id IS NULL puts unassigned koi (NULL pond_id) at the bottom 
                     PreparedStatement pStmt = con.prepareStatement(
-                        "SELECT k.*, p.name AS pond_name FROM koi k "
-                        + "LEFT JOIN ponds p ON k.pond_id = p.id "
-                        + "WHERE k.organization_id = ? ORDER BY k.name");
+                        "SELECT k.*, p.code AS pond_code, l.name AS location_name "
+                      + "FROM koi k "
+                      + "LEFT JOIN ponds p ON k.pond_id = p.id "
+                      + "LEFT JOIN pond_locations l ON p.location_id = l.id "
+                      + "WHERE k.organization_id = ? "
+                      + "ORDER BY (k.pond_id IS NULL), l.display_order, p.code, k.name");
                     pStmt.setInt(1, orgId);
                     rs = pStmt.executeQuery();
 
                     if (rs.isBeforeFirst()) {
                         hasKoi = true;
-        %>
-        <div class="koi-grid">
-            <%
+                        int currentPondId = -1;
                         while (rs.next()) {
                             int id = rs.getInt("id");
                             String name = rs.getString("name");
@@ -380,7 +383,9 @@
                             String status = rs.getString("status");
                             int pondId = rs.getInt("pond_id");
                             boolean pondNull = rs.wasNull();
-                            String pondName = rs.getString("pond_name");
+                            int sectionKey = pondNull ? 0 : pondId;
+                            String pondCode = rs.getString("pond_code");
+                            String locationName = rs.getString("location_name");
                             String notes = rs.getString("notes");
                             String imageUrl = rs.getString("image_url");
 
@@ -410,11 +415,26 @@
                             }
                             String specsOverlay = String.join(" · ", bits);
 
-                            // Subtitle below name: variety · pond
-                            List<String> metaBits = new ArrayList<>();
-                            if (variety != null && !variety.isEmpty()) metaBits.add(variety);
-                            metaBits.add(pondName != null ? pondName : "Unassigned");
-                            String metaLine = String.join(" · ", metaBits);
+                            // Subtitle below name: just variety (pond is the section heading)
+                            String metaLine = (variety != null && !variety.isEmpty()) ? variety : "";
+
+                            if (sectionKey != currentPondId) {
+                                if (currentPondId != -1) {
+        %>
+                </div>
+            </section>
+        <%
+                                }
+                                currentPondId = sectionKey;
+                                String sectionHeading = pondNull
+                                    ? "Unassigned"
+                                    : pondCode + (locationName != null ? " &middot; " + locationName : "");
+        %>
+            <section class="pond-section">
+                <h3 class="pond-section-heading"><%= sectionHeading %></h3>
+                <div class="koi-grid">
+        <%
+                            }
             %>
             <div class="koi-card">
                 <a class="koi-card-link" href="koi.jsp?selectedId=<%= id %>">
@@ -436,7 +456,9 @@
                     </div>
                     <div class="koi-card-body">
                         <h3 class="koi-card-title"><%= name %></h3>
-                        <p class="koi-card-meta"><%= metaLine %></p>
+                        <% if (!metaLine.isEmpty()) { %>
+                            <p class="koi-card-meta"><%= metaLine %></p>
+                        <% } %>
                     </div>
                 </a>
                 <div class="koi-card-actions">
@@ -451,9 +473,12 @@
             </div>
             <%
                         }
-            %>
-        </div>
+                        if (currentPondId != -1) {
+        %>
+                </div>
+            </section>
         <%
+                        }
                     }
                     if (rs != null) rs.close();
                 }
