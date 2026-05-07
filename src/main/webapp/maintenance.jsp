@@ -34,10 +34,21 @@
             ResultSet keys = ps.getGeneratedKeys();
             if (keys.next()) {
                 int scheduleId = keys.getInt(1);
+
+                LocalDate startDate = LocalDate.parse(dueAt);
+                LocalDate firstDue;
+                switch (freq) {
+                    case "Daily":    firstDue = startDate.plusDays(1); break;
+                    case "Weekly":   firstDue = startDate.plusWeeks(1); break;
+                    case "Biweekly": firstDue = startDate.plusWeeks(2); break;
+                    case "Monthly":  firstDue = startDate.plusMonths(1); break;
+                    default:         firstDue = startDate.plusWeeks(1);
+                }
+
                 PreparedStatement taskPs = con.prepareStatement(
                     "INSERT INTO MaintenanceTask (schedule_id, due_at, status, notes) VALUES (?, ?, 'Pending', ?)");
                 taskPs.setInt(1, scheduleId);
-                taskPs.setDate(2, Date.valueOf(dueAt));
+                taskPs.setDate(2, Date.valueOf(firstDue));
                 taskPs.setString(3, notes);
                 taskPs.executeUpdate();
                 taskPs.close();
@@ -49,47 +60,49 @@
         } else if ("completeTask".equals(action)) {
             int scheduleId = Integer.parseInt(request.getParameter("schedule_id"));
             String dueAt = request.getParameter("due_at");
+            LocalDate currentDue = LocalDate.parse(dueAt);
 
             PreparedStatement chk = con.prepareStatement(
-                "SELECT freq, notes FROM MaintenanceSchedule WHERE id = ? AND organization_id = ?");
-            chk.setInt(1, scheduleId);
-            chk.setInt(2, orgId);
-            ResultSet chkRs = chk.executeQuery();
-            if (!chkRs.next()) {
-                error = "Schedule not found.";
-            } else {
-                String freq = chkRs.getString("freq");
-                String taskNotes = chkRs.getString("notes");
-                chkRs.close();
-                chk.close();
+                "SELECT s.freq, s.notes FROM MaintenanceSchedule s WHERE s.id = ? AND s.organization_id = ?");
+                chk.setInt(1, scheduleId);
+                chk.setInt(2, orgId);
+                ResultSet chkRs = chk.executeQuery();
+                if (!chkRs.next()) {
+                    error = "Schedule not found.";
+                } else {
+                    String freq = chkRs.getString("freq");
+                    String taskNotes = chkRs.getString("notes");
+                    chkRs.close();
+                    chk.close();
 
-                PreparedStatement up = con.prepareStatement(
-                    "UPDATE MaintenanceTask SET status = 'Completed', completed_at = NOW(), completed_by_user_id = ? "
-                  + "WHERE schedule_id = ? AND due_at = ?");
-                up.setInt(1, userId);
-                up.setInt(2, scheduleId);
-                up.setDate(3, Date.valueOf(dueAt));
-                up.executeUpdate();
-                up.close();
+                    PreparedStatement up = con.prepareStatement(
+                        "UPDATE MaintenanceTask SET status = 'Completed', completed_at = NOW(), completed_by_user_id = ? "
+                      + "WHERE schedule_id = ? AND due_at = ?");
+                    up.setInt(1, userId);
+                    up.setInt(2, scheduleId);
+                    up.setDate(3, Date.valueOf(dueAt));
+                    up.executeUpdate();
+                    up.close();
 
-                LocalDate currentDue = LocalDate.parse(dueAt);
-                LocalDate nextDue;
-                switch (freq) {
-                    case "Daily":    nextDue = currentDue.plusDays(1); break;
-                    case "Weekly":   nextDue = currentDue.plusWeeks(1); break;
-                    case "Biweekly": nextDue = currentDue.plusWeeks(2); break;
-                    case "Monthly":  nextDue = currentDue.plusMonths(1); break;
-                    default:         nextDue = currentDue.plusWeeks(1);
+                    LocalDate baseDate = currentDue.isBefore(LocalDate.now()) ? LocalDate.now() : currentDue;
+                    LocalDate nextDue;
+                    switch (freq) {
+                        case "Daily":    nextDue = baseDate.plusDays(1); break;
+                        case "Weekly":   nextDue = baseDate.plusWeeks(1); break;
+                        case "Biweekly": nextDue = baseDate.plusWeeks(2); break;
+                        case "Monthly":  nextDue = baseDate.plusMonths(1); break;
+                        default:         nextDue = baseDate.plusWeeks(1);
+                    }
+
+                    PreparedStatement ins = con.prepareStatement(
+                        "INSERT IGNORE INTO MaintenanceTask (schedule_id, due_at, status, notes) VALUES (?, ?, 'Pending', ?)");
+                    ins.setInt(1, scheduleId);
+                    ins.setDate(2, Date.valueOf(nextDue));
+                    ins.setString(3, taskNotes);
+                    ins.executeUpdate();
+                    ins.close();
+                    success = "Task completed.";
                 }
-                PreparedStatement ins = con.prepareStatement(
-                    "INSERT INTO MaintenanceTask (schedule_id, due_at, status, notes) VALUES (?, ?, 'Pending', ?)");
-                ins.setInt(1, scheduleId);
-                ins.setDate(2, Date.valueOf(nextDue));
-                ins.setString(3, taskNotes);
-                ins.executeUpdate();
-                ins.close();
-                success = "Task completed.";
-            }
 
         } else if ("deactivateSchedule".equals(action)) {
             int scheduleId = Integer.parseInt(request.getParameter("schedule_id"));
@@ -124,9 +137,18 @@
     <link rel="stylesheet" type="text/css" href="css/maintenance-style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* Show dropdown on hover — replaces the JavaScript toggleMenu function */
         .three-dot-menu:hover .dropdown-menu {
             display: block;
+        }
+        .status-flag.completed-flash {
+            color: #2e7d32;
+            font-weight: bold;
+        }
+        .action-btn:disabled {
+            background-color: #ccc;
+            color: #666;
+            cursor: not-allowed;
+            opacity: 0.6;
         }
     </style>
 </head>
@@ -136,7 +158,6 @@
     <main class="content-wrapper container">
         <header class="section-header-top">
             <h2>Maintenance & Feeding</h2>
-            <%-- Clicking this link passes action=addSchedule, which Java uses to open the modal --%>
             <a href="maintenance.jsp?action=addSchedule" class="add-task-btn" style="text-decoration: none; color: white;">
                 <i class="fa fa-plus"></i> Add Maintenance Schedule
             </a>
@@ -274,21 +295,7 @@
                                 LocalDate due = dueDate.toLocalDate();
                                 boolean isOverdue = due.isBefore(today) && !"Completed".equals(status);
 
-                                // Calculate missed occurrences based on frequency and days overdue
-                                int missedCount = 1;
-                                if (isOverdue) {
-                                    long daysDiff = java.time.temporal.ChronoUnit.DAYS.between(due, today);
-                                    int periodDays = 1; // default: Daily
-                                    if ("Weekly".equals(freq))    periodDays = 7;
-                                    else if ("Biweekly".equals(freq)) periodDays = 14;
-                                    else if ("Monthly".equals(freq))  periodDays = 30;
-                                    missedCount = (int) Math.ceil((double) daysDiff / periodDays);
-                                    if (missedCount < 1) missedCount = 1;
-                                }
-
-                                String displayStatus = isOverdue
-                                    ? (missedCount > 1 ? "Overdue (" + missedCount + ")" : "Overdue")
-                                    : status;
+                                String displayStatus = isOverdue ? "Overdue" : status;
                                 String statusClass = isOverdue ? "overdue" : "pending";
                                 String rowClass = isOverdue ? "task-row urgent" : "task-row";
                     %>
@@ -298,7 +305,7 @@
                             <td><%= dueDate %></td>
                             <td><span class="status-flag <%= statusClass %>"><%= displayStatus %></span></td>
                             <td>
-                                <form action="maintenance.jsp" method="POST" style="display:inline;">
+                                <form action="maintenance.jsp" method="POST" style="display:inline;" class="complete-form">
                                     <input type="hidden" name="action" value="completeTask">
                                     <input type="hidden" name="schedule_id" value="<%= scheduleId %>">
                                     <input type="hidden" name="due_at" value="<%= dueDate %>">
@@ -382,5 +389,42 @@
     </div>
 
     <%@ include file="footer.jsp" %>
+
+    <script>
+        document.querySelectorAll('form.complete-form').forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                var row = form.closest('tr');
+                var statusCell = row.querySelector('.status-flag');
+                var completeBtn = form.querySelector('button[type="submit"]');
+
+                completeBtn.disabled = true;
+
+                var data = new URLSearchParams(new FormData(form));
+
+                fetch('maintenance.jsp', { 
+                    method: 'POST', 
+                    body: data, 
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                })
+                    .then(function(response) {
+                        if (!response.ok) throw new Error('Server error: ' + response.status);
+
+                        statusCell.className = 'status-flag completed-flash';
+                        statusCell.textContent = 'Completed';
+                        row.className = 'task-row';
+
+                        setTimeout(function() {
+                            window.location.href = 'maintenance.jsp';
+                        }, 5000);
+                    })
+                    .catch(function(err) {
+                        completeBtn.disabled = false;
+                        alert('Could not complete task: ' + err.message);
+                    });
+            });
+        });
+    </script>
 </body>
 </html>

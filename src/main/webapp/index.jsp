@@ -43,19 +43,31 @@
         }
         koiRs.close();
         
-        // Get total task count
-        ResultSet taskRs = countStmt.executeQuery("SELECT COUNT(*) AS total FROM MaintenanceTask WHERE status != 'Completed'");
+        // Get total maintenance task count scoped to the current organization
+        PreparedStatement taskCountStmt = con.prepareStatement(
+            "SELECT COUNT(*) AS total FROM MaintenanceTask t "
+          + "JOIN MaintenanceSchedule s ON t.schedule_id = s.id "
+          + "WHERE s.organization_id = ? AND t.status != 'Completed'");
+        taskCountStmt.setInt(1, (Integer) session.getAttribute("orgId"));
+        ResultSet taskRs = taskCountStmt.executeQuery();
         if (taskRs.next()) {
             totalTasks = taskRs.getInt("total");
         }
         taskRs.close();
+        taskCountStmt.close();
 
-        // Get overdue task count
-        ResultSet overdueRs = countStmt.executeQuery("SELECT COUNT(*) AS total FROM MaintenanceTask WHERE status != 'Completed' AND due_at < CURDATE()");
+        // Get overdue maintenance task count scoped to the current organization
+        PreparedStatement overdueTaskStmt = con.prepareStatement(
+            "SELECT COUNT(*) AS total FROM MaintenanceTask t "
+          + "JOIN MaintenanceSchedule s ON t.schedule_id = s.id "
+          + "WHERE s.organization_id = ? AND t.status != 'Completed' AND t.due_at < CURDATE()");
+        overdueTaskStmt.setInt(1, (Integer) session.getAttribute("orgId"));
+        ResultSet overdueRs = overdueTaskStmt.executeQuery();
         if (overdueRs.next()) {
             overdueTasks = overdueRs.getInt("total");
         }
         overdueRs.close();
+        overdueTaskStmt.close();
 
         countStmt.close();
 
